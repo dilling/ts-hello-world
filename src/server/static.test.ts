@@ -1,30 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { buildApp } from './app'
 import { createSilentLogger } from './lib/logger'
-import { createInMemoryWidgetRepository } from './repositories/widget.repository.memory'
+import { mock } from 'vitest-mock-extended'
+import type { WidgetRepository } from './repositories/widget.repository'
 import type { HealthService } from './services/health.service'
 import { createWidgetService } from './services/widget.service'
 import { mountSpa } from './static'
 
 /**
- * Regression tests for production SPA serving.
- *
- * This went wrong twice while building the template: first the static mount was scoped
- * to /assets only (so a real favicon got index.html), then the SPA fallback swallowed
- * unmatched /api routes (so a mistyped endpoint returned the HTML shell instead of a
- * JSON 404 — a confusing failure for any API client). Both are production-only, which
- * is exactly why they need a test rather than a careful comment.
+ * Regression tests for production SPA serving: a real static file must not get
+ * index.html, and an unknown /api route must return JSON rather than the HTML shell.
  */
 const FIXTURE_DIST = './test/fixtures/dist-web'
 
 function setup() {
   const logger = createSilentLogger()
-  const health: HealthService = {
-    check: async () => ({ status: 'ok', db: 'ok', queue: 'disabled', uptimeSeconds: 0 }),
-  }
+  const health = mock<HealthService>()
+  health.check.mockResolvedValue({ status: 'ok', db: 'ok', queue: 'disabled', uptimeSeconds: 0 })
   const app = buildApp({
     services: {
-      widgets: createWidgetService({ widgets: createInMemoryWidgetRepository(), logger }),
+      widgets: createWidgetService({ widgets: mock<WidgetRepository>(), logger }),
       health,
     },
     logger,

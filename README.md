@@ -75,22 +75,21 @@ gives you HMR.
 
 Read these in order — it's about 300 lines and covers every convention in the repo.
 
-| Pattern                                  | File                                                  |
-| ---------------------------------------- | ----------------------------------------------------- |
-| Shared DTOs (one zod schema, both sides) | `src/shared/widget.ts`                                |
-| Env parsing, fail-fast at boot           | `src/server/env.ts`                                   |
-| **Repository** — data access only        | `src/server/repositories/widget.repository.ts`        |
-| In-memory repository for tests           | `src/server/repositories/widget.repository.memory.ts` |
-| **Service** — behaviour, domain errors   | `src/server/services/widget.service.ts`               |
-| Composition root (all the wiring)        | `src/server/container.ts`                             |
-| App assembly + single error boundary     | `src/server/app.ts`                                   |
-| Routes, chained for RPC types            | `src/server/routes/widgets.ts`                        |
-| Consistent validation errors             | `src/server/lib/validator.ts`                         |
-| Background job                           | `src/server/jobs/refresh-widgets.job.ts`              |
-| Typed RPC client                         | `src/web/lib/api.ts`                                  |
-| **Frontend state** (Query, no Redux)     | `src/web/lib/queries.ts`                              |
-| Route with typed search params + loader  | `src/web/routes/widgets.index.tsx`                    |
-| Test harness: per-worker DB schemas      | `test/db/setup.ts`                                    |
+| Pattern                                  | File                                           |
+| ---------------------------------------- | ---------------------------------------------- |
+| Shared DTOs (one zod schema, both sides) | `src/shared/widget.ts`                         |
+| Env parsing, fail-fast at boot           | `src/server/env.ts`                            |
+| **Repository** — data access only        | `src/server/repositories/widget.repository.ts` |
+| **Service** — behaviour, domain errors   | `src/server/services/widget.service.ts`        |
+| Composition root (all the wiring)        | `src/server/container.ts`                      |
+| App assembly + single error boundary     | `src/server/app.ts`                            |
+| Routes, chained for RPC types            | `src/server/routes/widgets.ts`                 |
+| Consistent validation errors             | `src/server/lib/validator.ts`                  |
+| Background job                           | `src/server/jobs/refresh-widgets.job.ts`       |
+| Typed RPC client                         | `src/web/lib/api.ts`                           |
+| **Frontend state** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
+| Route with typed search params + loader  | `src/web/routes/widgets.index.tsx`             |
+| Test harness: per-worker DB schemas      | `test/db/setup.ts`                             |
 
 ### Server: repository / service split
 
@@ -98,9 +97,16 @@ A **repository** does data access and nothing else — queries in, domain object
 **service** owns behaviour: business rules, orchestration, domain errors. Services depend
 on repository _interfaces_, never on `Database`.
 
-That split is what makes `src/server/services/widget.service.test.ts` possible: it wires
-the real service to the in-memory repository and runs in milliseconds with no Docker.
-**That file is the test template** — copy it.
+That split is what makes `src/server/services/widget.service.test.ts` possible: it runs
+the real service against a `mock<WidgetRepository>()` from
+[vitest-mock-extended](https://www.npmjs.com/package/vitest-mock-extended), so there's no
+database and no Docker and it finishes in milliseconds. **That file is the test
+template** — copy it.
+
+Mocking the interface rather than hand-rolling a fake means adding a method to
+`WidgetRepository` can't silently leave a gap in the stub, and tests can assert on
+interactions (`expect(widgets.create).not.toHaveBeenCalled()`) as well as return values.
+Shared test data builders live in `test/factories.ts`.
 
 Dependencies are passed as arguments and wired in exactly one place,
 `src/server/container.ts`. No DI framework, no decorators.
