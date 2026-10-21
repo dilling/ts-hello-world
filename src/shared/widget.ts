@@ -28,14 +28,24 @@ export const widgetSchema = z.object({
 })
 export type Widget = z.infer<typeof widgetSchema>
 
-export const createWidgetSchema = z.object({
+const widgetFieldsSchema = z.object({
   name: z.string().trim().min(1).max(100),
+  status: widgetStatusSchema,
+  score: z.number().int().min(0).max(100),
+})
+
+export const createWidgetSchema = widgetFieldsSchema.extend({
   status: widgetStatusSchema.default('active'),
   score: z.number().int().min(0).max(100).default(0),
 })
 export type CreateWidgetInput = z.infer<typeof createWidgetSchema>
 
-export const updateWidgetSchema = createWidgetSchema.partial()
+/**
+ * Derived from the no-defaults base, NOT `createWidgetSchema.partial()`. `.partial()`
+ * keeps the defaults, so `PATCH { score }` would also write `status: 'active'` and
+ * silently un-pause a paused widget.
+ */
+export const updateWidgetSchema = widgetFieldsSchema.partial()
 export type UpdateWidgetInput = z.infer<typeof updateWidgetSchema>
 
 /**

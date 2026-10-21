@@ -1,117 +1,169 @@
 import { describe, expect, it } from 'vitest'
-import type { Widget } from '../../shared/widget'
+import { mock, type MockProxy } from 'vitest-mock-extended'
+import { aWidget } from '../../../test/factories'
 import { ConflictError, NotFoundError } from '../lib/errors'
 import { createSilentLogger } from '../lib/logger'
-import { createInMemoryWidgetRepository } from '../repositories/widget.repository.memory'
+import type { WidgetRepository } from '../repositories/widget.repository'
 import { createWidgetService } from './widget.service'
 
-/**
- * THE TEMPLATE TEST. Copy this file for every new service.
- *
- * No database, no HTTP, no mocking library — just the real service wired to the
- * in-memory repository. Runs in milliseconds, so there's no excuse not to write them.
- */
-function setup(seed: Widget[] = []) {
-  const widgets = createInMemoryWidgetRepository(seed)
+/** Template test: copy this for every new service. Real service, mocked repository. */
+function setup(): {
+  service: ReturnType<typeof createWidgetService>
+  widgets: MockProxy<WidgetRepository>
+} {
+  const widgets = mock<WidgetRepository>()
   const service = createWidgetService({ widgets, logger: createSilentLogger() })
   return { service, widgets }
 }
 
-function aWidget(overrides: Partial<Widget> = {}): Widget {
-  const now = new Date().toISOString()
-  return {
-    id: crypto.randomUUID(),
-    name: 'example',
-    status: 'active',
-    score: 50,
-    lastRefreshedAt: null,
-    createdAt: now,
-    updatedAt: now,
-    ...overrides,
-  }
-}
-
 describe('createWidgetService', () => {
   describe('create', () => {
-    it('creates a widget', async () => {
-      const { service } = setup()
+    it('creates a widget and returns it', async () => {
+      const { service, widgets } = setup()
+      const created = aWidget({ name: 'auth-service', score: 80 })
+      widgets.findByName.mockResolvedValue(null)
+      widgets.create.mockResolvedValue(created)
 
-      const widget = await service.create({ name: 'auth-service', status: 'active', score: 80 })
+      const result = await service.create({ name: 'auth-service', status: 'active', score: 80 })
 
-      expect(widget).toMatchObject({ name: 'auth-service', score: 80 })
-      expect(await service.list()).toHaveLength(1)
+      expect(result).toBe(created)
+      expect(widgets.create).toHaveBeenCalledWith({
+        name: 'auth-service',
+        status: 'active',
+        score: 80,
+      })
     })
 
-    it('rejects a duplicate name with a domain error', async () => {
-      const { service } = setup([aWidget({ name: 'auth-service' })])
+    it('rejects a duplicate name with a domain error, without attempting the insert', async () => {
+      const { service, widgets } = setup()
+      widgets.findByName.mockResolvedValue(aWidget({ name: 'auth-service' }))
 
       await expect(
         service.create({ name: 'auth-service', status: 'active', score: 10 }),
       ).rejects.toThrow(ConflictError)
+
+      expect(widgets.create).not.toHaveBeenCalled()
     })
   })
 
   describe('getById', () => {
-    it('throws NotFoundError for an unknown id', async () => {
-      const { service } = setup()
+    it('returns the widget when it exists', async () => {
+      const { service, widgets } = setup()
+      const widget = aWidget()
+      widgets.findById.mockResolvedValue(widget)
 
-      // The route layer relies on this throwing — app.onError turns it into a 404.
+      await expect(service.getById(widget.id)).resolves.toBe(widget)
+    })
+
+    it('throws NotFoundError for an unknown id', async () => {
+      const { service, widgets } = setup()
+      widgets.findById.mockResolvedValue(null)
+
       await expect(service.getById(crypto.randomUUID())).rejects.toThrow(NotFoundError)
     })
   })
 
   describe('list', () => {
-    it('filters by status and minimum score', async () => {
-      const { service } = setup([
-        aWidget({ name: 'a', status: 'active', score: 90 }),
-        aWidget({ name: 'b', status: 'active', score: 20 }),
-        aWidget({ name: 'c', status: 'archived', score: 95 }),
-      ])
+    it('passes the filter straight through to the repository', async () => {
+      const { service, widgets } = setup()
+      widgets.list.mockResolvedValue([])
 
-      const result = await service.list({ status: 'active', minScore: 50 })
+      await service.list({ status: 'active', minScore: 50 })
 
-      expect(result.map((w) => w.name)).toEqual(['a'])
+      expect(widgets.list).toHaveBeenCalledWith({ status: 'active', minScore: 50 })
+    })
+  })
+
+  describe('update', () => {
+    it('returns the updated widget', async () => {
+      const { service, widgets } = setup()
+      const updated = aWidget({ score: 77 })
+      widgets.update.mockResolvedValue(updated)
+
+      await expect(service.update(updated.id, { score: 77 })).resolves.toBe(updated)
+      expect(widgets.update).toHaveBeenCalledWith(updated.id, { score: 77 })
+    })
+
+    it('turns a missing row into NotFoundError', async () => {
+      const { service, widgets } = setup()
+      widgets.update.mockResolvedValue(null)
+
+      await expect(service.update(crypto.randomUUID(), { score: 1 })).rejects.toThrow(NotFoundError)
+    })
+  })
+
+  describe('delete', () => {
+    it('resolves when the row existed', async () => {
+      const { service, widgets } = setup()
+      widgets.delete.mockResolvedValue(true)
+
+      await expect(service.delete(crypto.randomUUID())).resolves.toBeUndefined()
+    })
+
+    it('turns a missing row into NotFoundError', async () => {
+      const { service, widgets } = setup()
+      widgets.delete.mockResolvedValue(false)
+
+      await expect(service.delete(crypto.randomUUID())).rejects.toThrow(NotFoundError)
     })
   })
 
   describe('refreshStale', () => {
-    it('refreshes never-refreshed active widgets', async () => {
-      const { service, widgets } = setup([aWidget({ name: 'stale', lastRefreshedAt: null })])
-
-      const refreshed = await service.refreshStale({ staleAfterMs: 0 })
-
-      expect(refreshed).toBe(1)
-      expect(widgets.all()[0]?.lastRefreshedAt).not.toBeNull()
-    })
-
-    it('skips widgets refreshed recently', async () => {
-      const { service } = setup([
-        aWidget({ name: 'fresh', lastRefreshedAt: new Date().toISOString() }),
-      ])
-
-      expect(await service.refreshStale({ staleAfterMs: 60_000 })).toBe(0)
-    })
-
-    it('ignores paused and archived widgets', async () => {
-      const { service } = setup([
-        aWidget({ name: 'paused', status: 'paused' }),
-        aWidget({ name: 'archived', status: 'archived' }),
-      ])
+    it('does no write when nothing is stale', async () => {
+      const { service, widgets } = setup()
+      widgets.findStale.mockResolvedValue([])
 
       expect(await service.refreshStale({ staleAfterMs: 0 })).toBe(0)
+      expect(widgets.recordRefresh).not.toHaveBeenCalled()
     })
 
-    it('keeps scores within 0-100', async () => {
-      const { service, widgets } = setup([
-        aWidget({ name: 'high', score: 100 }),
-        aWidget({ name: 'low', score: 0 }),
+    it('recomputes scores for stale widgets and writes them in one batch', async () => {
+      const { service, widgets } = setup()
+      const stale = [aWidget({ name: 'alpha', score: 40 }), aWidget({ name: 'beta', score: 60 })]
+      widgets.findStale.mockResolvedValue(stale)
+      widgets.recordRefresh.mockResolvedValue(stale.length)
+
+      const refreshed = await service.refreshStale({ staleAfterMs: 0, limit: 10 })
+
+      expect(refreshed).toBe(2)
+      expect(widgets.findStale).toHaveBeenCalledWith(expect.any(Date), 10)
+      expect(widgets.recordRefresh).toHaveBeenCalledTimes(1)
+      expect(widgets.recordRefresh).toHaveBeenCalledWith(
+        [
+          { id: stale[0]?.id, score: expect.any(Number) },
+          { id: stale[1]?.id, score: expect.any(Number) },
+        ],
+        expect.any(Date),
+      )
+    })
+
+    it('honours staleAfterMs when choosing the cutoff', async () => {
+      const { service, widgets } = setup()
+      widgets.findStale.mockResolvedValue([])
+      const before = Date.now()
+
+      await service.refreshStale({ staleAfterMs: 60_000 })
+
+      const [cutoff] = widgets.findStale.mock.calls[0] ?? []
+      expect(cutoff).toBeInstanceOf(Date)
+      expect((cutoff as Date).getTime()).toBeLessThanOrEqual(before - 60_000 + 1_000)
+    })
+
+    it('clamps recomputed scores to 0-100', async () => {
+      const { service, widgets } = setup()
+      widgets.findStale.mockResolvedValue([
+        aWidget({ name: 'at-ceiling', score: 100 }),
+        aWidget({ name: 'at-floor', score: 0 }),
       ])
+      widgets.recordRefresh.mockResolvedValue(2)
 
       await service.refreshStale({ staleAfterMs: 0 })
 
-      for (const widget of widgets.all()) {
-        expect(widget.score).toBeGreaterThanOrEqual(0)
-        expect(widget.score).toBeLessThanOrEqual(100)
+      const [updates] = widgets.recordRefresh.mock.calls[0] ?? []
+      expect(updates).toHaveLength(2)
+      for (const update of updates ?? []) {
+        expect(update.score).toBeGreaterThanOrEqual(0)
+        expect(update.score).toBeLessThanOrEqual(100)
       }
     })
   })
