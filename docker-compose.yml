@@ -25,17 +25,14 @@ services:
 
   # The app itself: HTTP server + pg-boss worker in one container, serving the built SPA.
   #
-  # Behind a profile on purpose. The day-to-day loop is `npm run db:up` (Postgres only)
-  # plus `npm run dev` on the host, which gives you HMR and fast restarts — you do not
-  # want to rebuild an image on every change. Use this service to check the production
-  # path works, or to hand someone a one-command demo:
+  # In the default profile, so `docker compose up` runs the whole thing — one command,
+  # nothing installed on the host, http://localhost:3000.
   #
-  #   npm run app:up      # build + run everything
-  #   npm run app:logs
-  #   npm run app:down
+  # For day-to-day development you want `npm run db:up` (Postgres ONLY, which is why
+  # that script names the service explicitly) plus `npm run dev` on the host, so you get
+  # HMR and fast restarts instead of an image rebuild per change.
   app:
     build: .
-    profiles: ['app']
     restart: unless-stopped
     environment:
       # `postgres` is the service name on the compose network, not localhost.
@@ -48,9 +45,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Migrations run here rather than in the image build: the build has no database,
-    # and this guarantees the schema is current before the server accepts traffic.
-    command: sh -c "npm run db:migrate && npm start"
+    # Migrations run here rather than in the image build: the build has no database, and
+    # this guarantees the schema is current before the server accepts traffic.
+    #
+    # The seed runs too so that a fresh `docker compose up` serves a populated dashboard
+    # instead of an empty one that looks broken. It's idempotent (ON CONFLICT DO NOTHING),
+    # so restarts are safe. DELETE `db:seed` from this line before deploying anywhere
+    # real — you don't want sample rows in a production database.
+    command: sh -c "npm run db:migrate && npm run db:seed && npm start"
     healthcheck:
       test:
         [

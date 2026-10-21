@@ -15,8 +15,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --project server --project web",
     "test:watch": "vitest",
-    "db:up": "docker compose up -d --wait",
-    "db:down": "docker compose down",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose stop postgres",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/server/db/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/server/db/seed.ts",
@@ -25,9 +25,9 @@
     "lint:fix": "oxlint --type-aware --fix && prettier --write .",
     "format": "prettier --write .",
     "ci": "npm run lint && npm run typecheck && npm run test",
-    "app:up": "docker compose --profile app up -d --build --wait",
-    "app:down": "docker compose --profile app down",
-    "app:logs": "docker compose --profile app logs -f app"
+    "app:up": "docker compose up -d --build --wait",
+    "app:down": "docker compose down",
+    "app:logs": "docker compose logs -f app"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

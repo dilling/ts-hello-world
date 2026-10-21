@@ -19,35 +19,54 @@ placeholder that exists only to demonstrate each layer. Delete it and copy its s
 
 ## Getting started
 
+### Just run it
+
+```bash
+docker compose up
+```
+
+Open **http://localhost:3000**. That's the whole thing — Postgres, migrations, seed data,
+the API, the background worker and the built frontend. Nothing needs to be installed on
+your machine except Docker, and there's no `.env` to copy (compose supplies the config).
+Takes about 10 seconds from a clean checkout.
+
+### Develop on it
+
+For actual work you want hot reload, so run Postgres in Docker and the app on the host:
+
 ```bash
 cp .env.example .env
 npm install
-npm run db:up        # Postgres in Docker
+npm run db:up        # Postgres ONLY — does not start the app container
 npm run db:migrate
 npm run db:seed
-npm run dev          # API on :3000, web on :5173
+npm run dev          # API on :3000, web on :5173 (proxying /api to the API)
 ```
 
-Open http://localhost:5173.
+Open **http://localhost:5173** for this one — that's the Vite dev server, which is what
+gives you HMR.
+
+> Both use port 3000 for the API, so stop one before starting the other:
+> `docker compose down` or `npm run db:down`.
 
 ## Commands
 
-| Command                          | What it does                                               |
-| -------------------------------- | ---------------------------------------------------------- |
-| `npm run dev`                    | Hono (`:3000`) + Vite (`:5173`) together, both watching    |
-| `npm run lint`                   | oxlint + `prettier --check` — **this is the CI lint gate** |
-| `npm run lint:fix`               | Fix everything fixable                                     |
-| `npm run typecheck`              | `tsc --noEmit`                                             |
-| `npm test`                       | All three Vitest projects (needs Postgres)                 |
-| `npm run test:unit`              | `server` + `web` projects only — **no Docker required**    |
-| `npm run ci`                     | lint + typecheck + test, what CI runs                      |
-| `npm run build`                  | SPA into `dist/web`, then typecheck                        |
-| `npm run db:up` / `db:down`      | Postgres container                                         |
-| `npm run db:generate`            | Generate migration SQL from the Drizzle schema             |
-| `npm run db:migrate` / `db:seed` | Apply migrations / insert sample rows                      |
-| `npm run db:reset`               | Nuke the volume and rebuild from scratch                   |
-| `npm run app:up`                 | Build and run the whole app in Docker (production path)    |
-| `npm run app:logs` / `app:down`  | Tail / stop it                                             |
+| Command                          | What it does                                                 |
+| -------------------------------- | ------------------------------------------------------------ |
+| `npm run dev`                    | Hono (`:3000`) + Vite (`:5173`) together, both watching      |
+| `npm run lint`                   | oxlint + `prettier --check` — **this is the CI lint gate**   |
+| `npm run lint:fix`               | Fix everything fixable                                       |
+| `npm run typecheck`              | `tsc --noEmit`                                               |
+| `npm test`                       | All three Vitest projects (needs Postgres)                   |
+| `npm run test:unit`              | `server` + `web` projects only — **no Docker required**      |
+| `npm run ci`                     | lint + typecheck + test, what CI runs                        |
+| `npm run build`                  | SPA into `dist/web`, then typecheck                          |
+| `npm run db:up` / `db:down`      | Postgres container only (never starts the app)               |
+| `npm run db:generate`            | Generate migration SQL from the Drizzle schema               |
+| `npm run db:migrate` / `db:seed` | Apply migrations / insert sample rows                        |
+| `npm run db:reset`               | Nuke the volume and rebuild from scratch                     |
+| `npm run app:up`                 | `docker compose up` with a rebuild, detached + health-waited |
+| `npm run app:logs` / `app:down`  | Tail / stop it                                               |
 
 ## Where the patterns live
 
