@@ -15,7 +15,7 @@ placeholder that exists only to demonstrate each layer. Delete it and copy its s
 | Jobs       | pg-boss (queue + cron, in your existing Postgres)      |
 | Validation | Zod 4, shared between server and client                |
 | Tests      | Vitest 5 (three projects), Testing Library             |
-| Lint       | ESLint 10 (type-aware) + Prettier 3                    |
+| Lint       | oxlint 1.89 (type-aware via tsgolint) + Prettier 3     |
 
 ## Getting started
 
@@ -35,7 +35,7 @@ Open http://localhost:5173.
 | Command                          | What it does                                               |
 | -------------------------------- | ---------------------------------------------------------- |
 | `npm run dev`                    | Hono (`:3000`) + Vite (`:5173`) together, both watching    |
-| `npm run lint`                   | ESLint + `prettier --check` — **this is the CI lint gate** |
+| `npm run lint`                   | oxlint + `prettier --check` — **this is the CI lint gate** |
 | `npm run lint:fix`               | Fix everything fixable                                     |
 | `npm run typecheck`              | `tsc --noEmit`                                             |
 | `npm test`                       | All three Vitest projects (needs Postgres)                 |
@@ -164,13 +164,18 @@ normal `db:up` + `dev` loop never rebuilds an image.
   comment in `src/server/db/schema.ts`.
 - There is **no auth**. The app is assumed to be VPN-only. If that changes, the hook point
   is a middleware in `src/server/app.ts`.
-- **TypeScript is pinned to 5.9, not 7.** This is forced: no published version of
-  `typescript-eslint` supports TS 7 yet (its peer range is `<6.1.0`), and type-aware
-  linting was judged worth more than the native compiler's speed. Revisit once
-  `typescript-eslint` ships TS 7 support — the only blocker is that peer range.
-- `eslint-plugin-jsx-a11y` is deliberately absent: it doesn't support ESLint 10 yet. Add
-  it when it does if accessibility linting matters to you.
-- Linting is **type-aware** (`recommendedTypeChecked`), which is the whole reason for
-  ESLint over a faster syntax-only linter: it catches unhandled promises in a codebase
-  that is async end to end. Two rules are switched off on purpose in `eslint.config.js`,
-  each with a comment explaining why — read those before adding a third.
+- **TypeScript 7** (the native Go compiler) does the typechecking. That's only possible
+  because oxlint's type-aware linting runs on `oxlint-tsgolint`, which is built on
+  typescript-go as well. `typescript-eslint` still caps its peer range at `<6.1.0`, so an
+  ESLint-based setup would force TypeScript 5.9 — which is why this repo doesn't use one.
+- Linting is **type-aware** (`oxlint --type-aware`), and that's the point: it catches
+  unhandled promises and misused async callbacks in a codebase that's async end to end.
+  A syntax-only linter cannot.
+- The two **TanStack ESLint plugins run inside oxlint** through its `jsPlugins` bridge, so
+  Query's `exhaustive-deps` and Router's rules still apply. That bridge is alpha and not
+  covered by semver — if it breaks, delete the `jsPlugins` line in `.oxlintrc.json`; you
+  lose those rules and nothing else.
+- Some rules are switched off in `.oxlintrc.json` — `react-in-jsx-scope` is wrong for
+  React 19's automatic JSX runtime, `import/no-unassigned-import` is wrong for CSS
+  side-effect imports, and so on. Confirm a rule is genuinely wrong for this stack before
+  adding to that list.
