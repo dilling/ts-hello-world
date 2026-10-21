@@ -35,13 +35,16 @@ Takes about 10 seconds from a clean checkout.
 For actual work you want hot reload, so run Postgres in Docker and the app on the host:
 
 ```bash
-cp .env.example .env
 npm install
 npm run db:up        # Postgres ONLY — does not start the app container
 npm run db:migrate
 npm run db:seed
 npm run dev          # API on :3000, web on :5173 (proxying /api to the API)
 ```
+
+No `.env` needed: `DATABASE_URL` defaults to the local compose database, and `PORT` and
+`LOG_LEVEL` have defaults too. Copy `.env.example` to `.env` only if you want to override
+something — it's loaded when present and ignored when absent.
 
 Open **http://localhost:5173** for this one — that's the Vite dev server, which is what
 gives you HMR.
