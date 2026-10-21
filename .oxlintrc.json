@@ -9,7 +9,13 @@
     "builtin": true,
     "es2024": true
   },
-  "ignorePatterns": ["dist", "drizzle", "src/web/routeTree.gen.ts", "node_modules"],
+  "ignorePatterns": [
+    "dist",
+    "drizzle",
+    "src/web/routeTree.gen.ts",
+    "node_modules",
+    "test/fixtures"
+  ],
   "rules": {
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",

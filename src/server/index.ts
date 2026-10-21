@@ -1,10 +1,10 @@
 import { existsSync } from 'node:fs'
 import { serve } from '@hono/node-server'
-import { serveStatic } from '@hono/node-server/serve-static'
 import { buildApp } from './app'
 import { createContainer } from './container'
 import { loadEnv } from './env'
 import { startWorker, stopWorker } from './jobs/worker'
+import { mountSpa } from './static'
 
 const env = loadEnv()
 const container = createContainer(env)
@@ -24,10 +24,11 @@ if (env.NODE_ENV === 'production') {
   if (!existsSync(WEB_DIST)) {
     logger.warn('dist/web is missing — run `npm run build` to serve the frontend')
   }
-  app.use('/assets/*', serveStatic({ root: WEB_DIST }))
-  // SPA fallback: any non-/api path that isn't a real file gets index.html, so deep
-  // links like /widgets/<id> resolve to the client router.
-  app.get('*', serveStatic({ root: WEB_DIST, path: 'index.html' }))
+  // Serve any real file in dist/web — hashed bundles under /assets, plus whatever Vite
+  // copied from public/ (favicon.svg, robots.txt, …). serveStatic calls next() on a
+  // miss, so the SPA fallback below still gets its turn. Scoping this to /assets only
+  // would quietly serve index.html in place of a missing favicon.
+  mountSpa(app, WEB_DIST)
 }
 
 await startWorker({ boss: container.queue, services: container.services, logger })

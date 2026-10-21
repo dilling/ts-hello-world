@@ -11,7 +11,12 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Postgres 18+ wants a SINGLE mount at /var/lib/postgresql, not .../data.
+      # The image puts its data in a version-specific subdirectory so that
+      # `pg_upgrade --link` works without crossing a mount boundary. Mounting
+      # /var/lib/postgresql/data instead makes PG18 refuse to start, reporting the
+      # directory as an "unused mount/volume".
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U app -d app']
       interval: 2s

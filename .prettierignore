@@ -1,5 +1,7 @@
 dist/
 drizzle/
+# Stands in for Vite build output — intentionally not formatted like source.
+test/fixtures/
 node_modules/
 src/web/routeTree.gen.ts
 package-lock.json
