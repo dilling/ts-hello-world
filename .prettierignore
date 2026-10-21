@@ -1,7 +1,10 @@
-dist/
+# Prettier already reads .gitignore (its --ignore-path defaults to
+# [.gitignore, .prettierignore]), so dist/, node_modules/ and routeTree.gen.ts
+# don't need repeating here. Only tracked files that shouldn't be formatted do.
+
+# Generated migration SQL — drizzle-kit owns the formatting of these.
 drizzle/
+# Huge, machine-written, and reformatting it would wreck every diff.
+package-lock.json
 # Stands in for Vite build output — intentionally not formatted like source.
 test/fixtures/
-node_modules/
-src/web/routeTree.gen.ts
-package-lock.json
