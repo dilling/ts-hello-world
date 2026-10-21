@@ -15,7 +15,7 @@ placeholder that exists only to demonstrate each layer. Delete it and copy its s
 | Jobs       | pg-boss (queue + cron, in your existing Postgres)      |
 | Validation | Zod 4, shared between server and client                |
 | Tests      | Vitest 5 (three projects), Testing Library             |
-| Lint       | oxlint 1.89 (type-aware via tsgolint) + Prettier 3     |
+| Lint       | oxlint 1.89 (type-aware via tsgolint) + oxfmt          |
 
 ## Getting started
 
@@ -57,7 +57,7 @@ gives you HMR.
 | Command                          | What it does                                                 |
 | -------------------------------- | ------------------------------------------------------------ |
 | `npm run dev`                    | Hono (`:3000`) + Vite (`:5173`) together, both watching      |
-| `npm run lint`                   | oxlint + `prettier --check` — **this is the CI lint gate**   |
+| `npm run lint`                   | oxlint + `oxfmt --check` — **this is the CI lint gate**      |
 | `npm run lint:fix`               | Fix everything fixable                                       |
 | `npm run typecheck`              | `tsc --noEmit`                                               |
 | `npm test`                       | All three Vitest projects (needs Postgres)                   |
