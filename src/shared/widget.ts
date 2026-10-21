@@ -1,0 +1,49 @@
+import { z } from 'zod'
+
+/**
+ * These schemas are the single source of truth for the Widget DTOs.
+ *
+ * The server validates requests against them (`@hono/zod-validator`) and the web app
+ * imports the inferred types. Change a field here and both sides move together.
+ *
+ * NOTE: timestamps are ISO strings, not `Date`. Everything crossing the wire is JSON,
+ * so the repository converts `Date` -> string at the data-access boundary. If domain
+ * types claimed `Date` here, the typed RPC client would promise `Date` and hand you a
+ * string at runtime — a genuinely annoying bug to chase at 2am.
+ */
+
+export const WIDGET_STATUSES = ['active', 'paused', 'archived'] as const
+export const widgetStatusSchema = z.enum(WIDGET_STATUSES)
+export type WidgetStatus = z.infer<typeof widgetStatusSchema>
+
+export const widgetSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  status: widgetStatusSchema,
+  /** Stand-in for "coverage %" — a 0-100 metric we can chart. */
+  score: z.number().int().min(0).max(100),
+  lastRefreshedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+})
+export type Widget = z.infer<typeof widgetSchema>
+
+export const createWidgetSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  status: widgetStatusSchema.default('active'),
+  score: z.number().int().min(0).max(100).default(0),
+})
+export type CreateWidgetInput = z.infer<typeof createWidgetSchema>
+
+export const updateWidgetSchema = createWidgetSchema.partial()
+export type UpdateWidgetInput = z.infer<typeof updateWidgetSchema>
+
+/**
+ * Query params arrive as strings, hence `coerce`. This is the shape that becomes
+ * typed search params on the frontend route — the mechanism real filters should use.
+ */
+export const listWidgetsQuerySchema = z.object({
+  status: widgetStatusSchema.optional(),
+  minScore: z.coerce.number().int().min(0).max(100).optional(),
+})
+export type ListWidgetsQuery = z.infer<typeof listWidgetsQuerySchema>

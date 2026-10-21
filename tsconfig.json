@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+
+    // TypeScript 7 removed `baseUrl`, so these must be relative to this file.
+    "paths": {
+      "@server/*": ["./src/server/*"],
+      "@web/*": ["./src/web/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@test/*": ["./test/*"]
+    }
+  },
+  "include": ["src", "test", "*.config.ts", "drizzle.config.ts"]
+}

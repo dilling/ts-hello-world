@@ -1,0 +1,68 @@
+name: ts-hello-world
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - '5432:5432'
+    volumes:
+      # Postgres 18+ wants a SINGLE mount at /var/lib/postgresql, not .../data.
+      # The image puts its data in a version-specific subdirectory so that
+      # `pg_upgrade --link` works without crossing a mount boundary. Mounting
+      # /var/lib/postgresql/data instead makes PG18 refuse to start, reporting the
+      # directory as an "unused mount/volume".
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d app']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  # The app itself: HTTP server + pg-boss worker in one container, serving the built SPA.
+  #
+  # In the default profile, so `docker compose up` runs the whole thing — one command,
+  # nothing installed on the host, http://localhost:3000.
+  #
+  # For day-to-day development you want `npm run db:up` (Postgres ONLY, which is why
+  # that script names the service explicitly) plus `npm run dev` on the host, so you get
+  # HMR and fast restarts instead of an image rebuild per change.
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      # `postgres` is the service name on the compose network, not localhost.
+      DATABASE_URL: postgres://app:app@postgres:5432/app
+      PORT: '3000'
+      NODE_ENV: production
+      LOG_LEVEL: info
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Migrations run here rather than in the image build: the build has no database, and
+    # this guarantees the schema is current before the server accepts traffic.
+    #
+    # The seed runs too so that a fresh `docker compose up` serves a populated dashboard
+    # instead of an empty one that looks broken. It's idempotent (ON CONFLICT DO NOTHING),
+    # so restarts are safe. DELETE `db:seed` from this line before deploying anywhere
+    # real — you don't want sample rows in a production database.
+    command: sh -c "npm run db:migrate && npm run db:seed && npm start"
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(\"http://localhost:3000/api/health\").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  pgdata:

@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+/*
+ * Tailwind v4 is configured in CSS, not tailwind.config.js. `@theme` entries become
+ * both design tokens and utilities (`--color-muted` -> `bg-muted`, `text-muted`).
+ * These are shadcn/ui's token names, so components copied from shadcn just work.
+ */
+@theme {
+  --color-background: oklch(0.21 0.006 285.9);
+  --color-foreground: oklch(0.98 0 0);
+  --color-card: oklch(0.25 0.006 285.9);
+  --color-card-foreground: oklch(0.98 0 0);
+  --color-muted: oklch(0.31 0.006 285.9);
+  --color-muted-foreground: oklch(0.71 0.013 286.1);
+  --color-border: oklch(0.34 0.006 285.9);
+  --color-primary: oklch(0.72 0.17 250.5);
+  --color-primary-foreground: oklch(0.17 0.01 285.9);
+  --color-destructive: oklch(0.63 0.21 25.3);
+  --color-success: oklch(0.72 0.16 148.6);
+  --color-warning: oklch(0.78 0.15 80.1);
+
+  --radius: 0.625rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+}
