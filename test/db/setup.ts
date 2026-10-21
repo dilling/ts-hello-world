@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { sql } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach } from 'vitest'
+import { afterAll, beforeAll, beforeEach } from 'vite-plus/test'
 import { createDatabase, type DatabaseHandle } from '../../src/server/db/client'
 
 /**

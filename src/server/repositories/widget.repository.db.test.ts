@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { testDb } from '../../../test/db/setup'
 import { createWidgetRepository } from './widget.repository'
 

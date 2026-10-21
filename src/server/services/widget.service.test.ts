@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import type { Widget } from '../../shared/widget'
 import { ConflictError, NotFoundError } from '../lib/errors'
 import { createSilentLogger } from '../lib/logger'

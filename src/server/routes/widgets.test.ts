@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import { buildApp } from '../app'
 import { createSilentLogger } from '../lib/logger'
 import { createInMemoryWidgetRepository } from '../repositories/widget.repository.memory'
