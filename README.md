@@ -95,7 +95,7 @@ Read these in order — it's about 300 lines and covers every convention in the 
 | Error / loading / 404 surfaces           | `src/web/main.tsx`, `src/web/components/app-*` |
 | Destructive action confirmation          | `src/web/components/confirm-button.tsx`        |
 | Design tokens (shadcn two-layer)         | `src/web/index.css`                            |
-| Test harness: per-worker DB schemas      | `test/db/setup.ts`                             |
+| Test harness: transactional DB fixtures  | `test/db/setup.ts`                             |
 
 Agent-facing rules are in `CLAUDE.md` — a shorter, imperative version of the same
 conventions.

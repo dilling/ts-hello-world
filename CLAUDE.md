@@ -38,11 +38,14 @@ Docker. Fix what it reports — don't hand back work that fails it.
 3. **Keep route handlers in one unbroken `.get().post()...` chain.** The chain is what
    builds the type `hc<AppType>()` reads on the frontend. Breaking it still works at
    runtime while the client's types silently collapse, with no error.
-4. Schema changes: edit `src/server/db/schema.ts`, then `npm run db:generate` and commit
-   the SQL. **Never `drizzle-kit push`** — the test harness builds from the committed SQL,
-   so pushing makes tests drift from the app.
+4. Schema changes: edit `src/server/db/schema.ts`, then `npm run db:push`. That's the
+   whole loop — the DB test harness builds its template by pushing `schema.ts` too, so
+   tests can't drift from the app.
 5. Test template: `src/server/services/widget.service.test.ts` — the real service against
    a `mock<WidgetRepository>()`. No database, no Docker. Most tests belong here.
+6. Tests that need real Postgres go in `*.db.test.ts` and use `dbTest` from
+   `test/db/setup.ts` instead of `it`. Each one runs in a transaction that is rolled back,
+   so there's no cleanup step — don't write one, and don't commit inside a test.
 
 ## Frontend rules
 
