@@ -37,7 +37,7 @@ For actual work you want hot reload, so run Postgres in Docker and the app on th
 ```bash
 npm install
 npm run db:up        # Postgres ONLY — does not start the app container
-npm run db:migrate
+npm run db:push        # apply schema.ts to the database
 npm run db:seed
 npm run dev          # API on :3000, web on :5173 (proxying /api to the API)
 ```
@@ -65,8 +65,9 @@ gives you HMR.
 | `npm run ci`                     | lint + typecheck + test, what CI runs                        |
 | `npm run build`                  | SPA into `dist/web`, then typecheck                          |
 | `npm run db:up` / `db:down`      | Postgres container only (never starts the app)               |
-| `npm run db:generate`            | Generate migration SQL from the Drizzle schema               |
-| `npm run db:migrate` / `db:seed` | Apply migrations / insert sample rows                        |
+| `npm run db:push`                | Apply `schema.ts` to the database — **the default workflow** |
+| `npm run db:generate`            | Emit migration SQL into `drizzle/` — only needed to deploy   |
+| `npm run db:migrate` / `db:seed` | Apply committed migrations / insert sample rows              |
 | `npm run db:reset`               | Nuke the volume and rebuild from scratch                     |
 | `npm run app:up`                 | `docker compose up` with a rebuild, detached + health-waited |
 | `npm run app:logs` / `app:down`  | Tail / stop it                                               |
@@ -153,24 +154,28 @@ Three Vitest projects:
 - **`db`** — `*.db.test.ts`, real Postgres. Needs `npm run db:up`.
 - **`web`** — components in jsdom.
 
-Each Vitest worker gets **its own Postgres schema** (`test_1`, `test_2`, …) inside the
-same `app` database, created by replaying `drizzle/*.sql` and dropped afterwards. DB tests
-run in parallel without interfering, and there's no second database or container.
+Each Vitest worker gets **its own database**, cloned from a template:
+`CREATE DATABASE app_test_worker_1 TEMPLATE app_test_template`. A global setup pushes
+`schema.ts` into the template once per run; Postgres then copies it per worker, which is
+fast and keeps workers fully isolated. Everything is dropped on teardown.
 
-### ⚠️ Use `db:generate`, never `drizzle-kit push`
+This is what makes `db:push` safe as the default: the harness derives its schema from
+`schema.ts`, not from committed SQL.
 
-The test harness builds its schema from the committed SQL in `drizzle/`. `push` mutates
-the database _without_ writing those files, so using it makes the tests silently drift
-from the app schema.
+### Schema changes: `db:push`
 
 ```bash
 # edit src/server/db/schema.ts, then:
-npm run db:generate   # writes drizzle/NNNN_*.sql — commit it
-npm run db:migrate
+npm run db:push
 ```
 
-This is the one place the template picks rigor over speed: it costs one extra command per
-schema change and it's what keeps several people on a shared database honest.
+That's it. The test harness builds its template database by pushing `schema.ts` too, so
+tests can't drift from the schema — nothing reads `drizzle/`.
+
+`npm run db:generate` still exists and emits migration SQL into `drizzle/`. You need it
+before deploying to a real environment, because `push` keeps no record of what's been
+applied and gives you nothing to review. Treat it as "produce a deploy artifact", not as
+part of the edit loop.
 
 ## Deployment shape
 
