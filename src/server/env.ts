@@ -1,10 +1,8 @@
 import { z } from 'zod'
 
 /**
- * The local compose database. Defaulting to it means a fresh clone runs with
- * `npm run db:up && npm run dev` — no .env to copy, nothing to drift out of date.
- * Safe to hardcode: these are throwaway local credentials, identical to the ones in
- * docker-compose.yml, and never reachable from anywhere but your machine.
+ * The local compose database, so a fresh clone runs with no `.env`. Throwaway
+ * credentials, identical to docker-compose.yml and only reachable on your machine.
  */
 export const DEV_DATABASE_URL = 'postgres://app:app@localhost:5432/app'
 
@@ -17,10 +15,7 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
-/**
- * Parse once at startup and fail loudly. Takes `source` as an argument rather than
- * reading `process.env` at module scope so tests can pass a fixture.
- */
+/** Parse once at startup and fail loudly. `source` is an argument so tests can pass one. */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   const result = envSchema.safeParse(source)
 
@@ -30,10 +25,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 
   const env = result.data
 
-  // The dev default is a footgun in production: the app would boot, connect to a
-  // localhost database that isn't there (or worse, one that is but shouldn't be), and
-  // report itself healthy. Checking `source` rather than `env` is deliberate — after
-  // parsing, a defaulted value is indistinguishable from a supplied one.
+  // Without this, production silently boots against a localhost database and reports
+  // itself healthy. Checks `source`, not `env`: after parsing, a defaulted value is
+  // indistinguishable from a supplied one.
   if (env.NODE_ENV === 'production' && !source.DATABASE_URL) {
     throw new Error(
       'DATABASE_URL must be set explicitly when NODE_ENV=production.\n' +

@@ -7,14 +7,7 @@ import { createWidgetRepository, type WidgetRepository } from './repositories/wi
 import { createHealthService, type HealthService } from './services/health.service'
 import { createWidgetService, type WidgetService } from './services/widget.service'
 
-/**
- * PATTERN: the composition root. The one place that knows how everything is wired —
- * env -> db -> repositories -> services. No DI framework, no decorators, no magic:
- * plain factory functions called in dependency order.
- *
- * Everything downstream receives what it needs as an argument, which is why tests can
- * swap in fakes (see `buildApp` in app.ts) without touching this file.
- */
+/** The composition root: env -> db -> repositories -> services. See src/server/README.md. */
 export interface Repositories {
   widgets: WidgetRepository
 }

@@ -12,22 +12,13 @@ const { logger } = container
 
 const app = buildApp({ services: container.services, logger })
 
-/**
- * In production the server also serves the built SPA, so there's one artifact and one
- * port. In dev, Vite serves the frontend on :5173 and proxies /api here instead.
- *
- * These are statements rather than part of a `.use()` chain on purpose — chaining them
- * conditionally would widen the inferred type that AppType (and the RPC client) rely on.
- */
+// Production serves the SPA from here too; in dev Vite serves it and proxies /api.
+// Statements, not a conditional `.use()` chain — chaining would widen AppType.
 const WEB_DIST = './dist/web'
 if (env.NODE_ENV === 'production') {
   if (!existsSync(WEB_DIST)) {
     logger.warn('dist/web is missing — run `npm run build` to serve the frontend')
   }
-  // Serve any real file in dist/web — hashed bundles under /assets, plus whatever Vite
-  // copied from public/ (favicon.svg, robots.txt, …). serveStatic calls next() on a
-  // miss, so the SPA fallback below still gets its turn. Scoping this to /assets only
-  // would quietly serve index.html in place of a missing favicon.
   mountSpa(app, WEB_DIST)
 }
 

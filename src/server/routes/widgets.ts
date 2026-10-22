@@ -7,12 +7,10 @@ import type { WidgetService } from '../services/widget.service'
 const idParamSchema = z.object({ id: z.uuid() })
 
 /**
- * IMPORTANT: keep these handlers in one unbroken `.get().post()...` chain.
- *
- * The chain is what builds up the type that `hc<AppType>()` reads on the frontend.
- * If you split it into `const r = new Hono(); r.get(...); r.post(...)`, it still works
- * at runtime but the client's types silently collapse and you lose every bit of
- * end-to-end safety — with no error to tell you.
+ * IMPORTANT: keep these handlers in one unbroken `.get().post()...` chain — that chain is
+ * what builds the type `hc<AppType>()` reads. Split it into separate `r.get(...)`
+ * statements and it still works at runtime while the client's types silently collapse,
+ * with no error to tell you.
  */
 export function createWidgetRoutes(services: { widgets: WidgetService }) {
   return (
@@ -29,9 +27,7 @@ export function createWidgetRoutes(services: { widgets: WidgetService }) {
         return c.json({ widget }, 201)
       })
 
-      // Refresh-now, so you can see the job's effect without waiting for the schedule.
-      // Calls the exact same service method the scheduled job calls, which is the point
-      // of keeping the work in the service rather than in the job handler.
+      // Refresh-now: the same service method the scheduled job calls.
       .post('/refresh', async (c) => {
         const refreshed = await services.widgets.refreshStale({ staleAfterMs: 0 })
         return c.json({ refreshed })

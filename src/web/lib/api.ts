@@ -2,12 +2,10 @@ import type { AppType } from '@server/app'
 import { hc } from 'hono/client'
 
 /**
- * The typed RPC client. `AppType` is the *server's* route type, imported directly —
- * no codegen, no OpenAPI spec, no duplicated types. Rename a field in a route handler
- * and `npm run typecheck` fails here.
+ * Typed RPC client against the server's own route type. See src/web/README.md.
  *
- * Only the type is imported, so none of the server's runtime code reaches the bundle.
- * Keep it that way: a value import from @server would pull Postgres into the browser.
+ * `AppType` must stay a type-only import — a value import from @server would pull
+ * Postgres into the browser bundle.
  */
 export const api = hc<AppType>('/').api
 
@@ -19,16 +17,10 @@ interface UnwrappableResponse {
 }
 
 /**
- * A Hono route that can return an error has a UNION response type (the 200 body OR the
- * 400 body), so `(await res.json()).widgets` doesn't typecheck — the error variant has
- * no `widgets`. This drops the failure variants from the union, leaving the success
- * body, and converts errors into thrown exceptions so TanStack Query's `isError` and
- * React error boundaries behave.
+ * Drops the failure variants from a route's union response type, leaving the success body.
  *
- * `Exclude<R, { ok: false }>` rather than `Extract<R, { ok: true }>` on purpose: a
- * handler that returns `c.json(x)` without an explicit status widens to
- * `ok: boolean`, which matches neither `true` nor `false` — so excluding the known
- * failures is what keeps those routes usable.
+ * `Exclude<R, { ok: false }>` and not `Extract<R, { ok: true }>`: a handler that returns
+ * `c.json(x)` with no explicit status widens to `ok: boolean`, matching neither.
  */
 type SuccessResponse<R> = Exclude<R, { ok: false }>
 type SuccessBody<R> = SuccessResponse<R> extends { json: () => Promise<infer Body> } ? Body : never

@@ -12,20 +12,15 @@ export interface WorkerDeps {
 /** A job module's registration function: create its queue, attach handler, schedule it. */
 type JobRegistration = (deps: WorkerDeps) => Promise<void>
 
-/**
- * Every job in the system. Adding one means adding a line here and nothing else.
- */
+/** Every job in the system. Registering a new one is a line here and nothing else. */
 const JOB_REGISTRATIONS: JobRegistration[] = [
   registerRefreshWidgetsJob,
   // registerPollActionsJob,
 ]
 
 /**
- * Starts pg-boss and registers every job in JOB_REGISTRATIONS.
- *
- * This currently runs in the same process as the HTTP server (one thing to deploy).
- * To split it out: make a `src/server/worker-entry.ts` that builds the container and
- * calls this, and drop the `startWorker` call from index.ts. Nothing else changes.
+ * Starts pg-boss and registers every job in JOB_REGISTRATIONS, in the HTTP server's own
+ * process. See src/server/jobs/README.md to split it out.
  */
 export async function startWorker(deps: WorkerDeps): Promise<void> {
   await deps.boss.start()

@@ -12,11 +12,7 @@ export interface AppDeps {
   logger: Logger
 }
 
-/**
- * Takes its dependencies as an argument instead of importing a container, so a test can
- * do `buildApp({ services: { widgets: serviceBackedByInMemoryRepo, ... }, logger })`
- * and exercise real routing with no database. See routes/widgets.test.ts.
- */
+/** Deps are an argument, not an imported container, so tests can pass fakes. */
 export function buildApp({ services, logger }: AppDeps) {
   const api = new Hono()
     .route('/widgets', createWidgetRoutes(services))
@@ -25,10 +21,8 @@ export function buildApp({ services, logger }: AppDeps) {
   const app = new Hono()
     .use('*', requestId())
     .route('/api', api)
-    // Single error boundary. Domain errors become their declared status; anything else
-    // is a 500 whose detail is logged rather than leaked to the client.
-    // (Request validation doesn't arrive here — lib/validator.ts responds directly,
-    // using the same body shape.)
+    // The single error boundary. Request validation doesn't reach it — lib/validator.ts
+    // responds directly, with the same body shape.
     .onError((error, c) => {
       if (error instanceof AppError) {
         return c.json(toErrorBody(error), error.status)
@@ -46,8 +40,5 @@ export function buildApp({ services, logger }: AppDeps) {
   return app
 }
 
-/**
- * The type the frontend's RPC client is built from. Exported from here so there is
- * exactly one source for it — see src/web/lib/api.ts.
- */
+/** The one source for the frontend's RPC client type. See src/web/lib/api.ts. */
 export type AppType = ReturnType<typeof buildApp>

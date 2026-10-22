@@ -6,9 +6,8 @@ import { MAINTENANCE_DB, TEST_DB, withDatabase } from './names'
 const run = promisify(execFile)
 
 /**
- * Runs once per test run: recreate the `app_test` database and apply schema.ts to it with
- * `drizzle-kit push`. Tests never read the committed migration SQL, so `push` can be the
- * day-to-day workflow without tests drifting from the schema.
+ * Runs once per test run: recreate `app_test` and push schema.ts into it. See
+ * test/README.md.
  *
  * Uses the CLI rather than `pushSchema` from drizzle-kit/api — that function terminates
  * the process during introspection without surfacing an error.

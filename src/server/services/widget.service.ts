@@ -9,13 +9,9 @@ import type { Logger } from '../lib/logger'
 import type { WidgetRepository } from '../repositories/widget.repository'
 
 /**
- * PATTERN: a service owns behaviour — business rules, orchestration across repositories,
- * domain errors. It depends on repository *interfaces*, so it's trivially unit-testable.
+ * Behaviour, business rules and domain errors. See src/server/README.md.
  *
- * Note the asymmetry with the repository: `findById` returns `null`, `getById` throws
- * `NotFoundError`. Routes want the throwing version (the error handler does the rest);
- * internal callers that can cope with absence want the nullable one. Being explicit
- * about which is which avoids a lot of `if (!x) return c.json(...)` boilerplate.
+ * `getById` throws `NotFoundError` where the repository's `findById` returns null.
  */
 export interface WidgetService {
   list(filter?: ListWidgetsQuery): Promise<Widget[]>
@@ -48,9 +44,8 @@ export function createWidgetService({ widgets, logger }: WidgetServiceDeps): Wid
     },
 
     async create(input) {
-      // Checked here rather than relying on the unique constraint so the caller gets a
-      // domain error instead of a raw Postgres 23505. The DB constraint still exists as
-      // the real guarantee — this is a nicer message, not the enforcement.
+      // A nicer message than Postgres 23505, not the enforcement — the unique constraint
+      // is still the real guarantee.
       const existing = await widgets.findByName(input.name)
       if (existing) {
         throw new ConflictError(`A widget named '${input.name}' already exists`)
@@ -82,10 +77,7 @@ export function createWidgetService({ widgets, logger }: WidgetServiceDeps): Wid
         return 0
       }
 
-      // Stand-in for the real work (call an external API, parse a report, compute a
-      // metric). Tomorrow this becomes "fetch the repo's latest Actions run and read
-      // its coverage artifact" — note that it happens here in the service, so the job
-      // handler stays a thin trigger and this logic is testable without a queue.
+      // Stand-in for the real work: call an external API, parse a report, compute a metric.
       const updates = stale.map((widget) => ({
         id: widget.id,
         score: nextScore(widget),

@@ -11,13 +11,7 @@ import {
 } from 'recharts'
 import { scoreTone } from './score'
 
-/**
- * Score-by-widget bar chart — the stand-in for "coverage by repo".
- *
- * Presentational only: it takes data as a prop and does no fetching. That keeps it
- * trivial to test and reusable on a team page later, where the data will come from a
- * different query.
- */
+/** Score-by-widget bar chart. Presentational — data in as a prop, no fetching. */
 export function WidgetScoreChart({ widgets }: { widgets: Widget[] }) {
   if (widgets.length === 0) {
     return <p className="text-muted-foreground py-8 text-center text-sm">No widgets to chart.</p>
@@ -52,8 +46,7 @@ export function WidgetScoreChart({ widgets }: { widgets: Widget[] }) {
             borderRadius: 8,
             color: 'var(--color-foreground)',
           }}
-          // Recharts types the value loosely (ValueType | undefined), so narrow it here
-          // rather than interpolating something that might not be a number.
+          // Recharts types this loosely as `ValueType | undefined`, so narrow it.
           formatter={(value) => [typeof value === 'number' ? `${value}%` : '—', 'Score']}
         />
         <Bar dataKey="score" radius={[4, 4, 0, 0]}>

@@ -72,9 +72,40 @@ gives you HMR.
 | `npm run app:up`                 | `docker compose up` with a rebuild, detached + health-waited |
 | `npm run app:logs` / `app:down`  | Tail / stop it                                               |
 
-## Where the patterns live
+## Conventions
 
-Read these in order — it's about 300 lines and covers every convention in the repo.
+Each area documents itself. Start here:
+
+| Area               | Doc                                                    |
+| ------------------ | ------------------------------------------------------ |
+| Server, DI, errors | [src/server/README.md](src/server/README.md)           |
+| Background jobs    | [src/server/jobs/README.md](src/server/jobs/README.md) |
+| Frontend, RPC      | [src/web/README.md](src/web/README.md)                 |
+| Tests              | [test/README.md](test/README.md)                       |
+
+Comment and PR conventions are in [CLAUDE.md](CLAUDE.md) — short comments, gotchas only,
+prose lives in these READMEs.
+
+### The short version
+
+- **Server** is repository → service → route, wired in `container.ts`, with a single error
+  boundary in `app.ts`. Details in [src/server/README.md](src/server/README.md).
+- **Types are end-to-end**: `src/web/lib/api.ts` does `hc<AppType>()` against the server's
+  own route type, so renaming a response field fails `npm run typecheck` in the frontend.
+  Two things keep that honest and both break silently —
+  [src/server/README.md](src/server/README.md) covers them.
+- **Frontend state** is TanStack Query for server data, `useState` for ephemeral UI, URL
+  search params for filters, and no global store.
+  See [src/web/README.md](src/web/README.md).
+- **Jobs** are pg-boss in the API's own process; handlers are thin triggers that call a
+  service. See [src/server/jobs/README.md](src/server/jobs/README.md).
+- **Tests** are three Vitest projects, with real-Postgres tests wrapped in rolled-back
+  transactions. `widget.service.test.ts` is the template to copy.
+  See [test/README.md](test/README.md).
+
+### Where the patterns live
+
+One worked example of each, in reading order:
 
 | Pattern                                  | File                                           |
 | ---------------------------------------- | ---------------------------------------------- |
@@ -90,92 +121,9 @@ Read these in order — it's about 300 lines and covers every convention in the 
 | Typed RPC client                         | `src/web/lib/api.ts`                           |
 | **Frontend state** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
 | Route with typed search params + loader  | `src/web/routes/widgets.index.tsx`             |
-| Test harness: per-worker DB schemas      | `test/db/setup.ts`                             |
+| Test harness: transactional fixtures     | `test/db/setup.ts`                             |
 
-### Server: repository / service split
-
-A **repository** does data access and nothing else — queries in, domain objects out. A
-**service** owns behaviour: business rules, orchestration, domain errors. Services depend
-on repository _interfaces_, never on `Database`.
-
-That split is what makes `src/server/services/widget.service.test.ts` possible: it runs
-the real service against a `mock<WidgetRepository>()` from
-[vitest-mock-extended](https://www.npmjs.com/package/vitest-mock-extended), so there's no
-database and no Docker and it finishes in milliseconds. **That file is the test
-template** — copy it.
-
-Mocking the interface rather than hand-rolling a fake means adding a method to
-`WidgetRepository` can't silently leave a gap in the stub, and tests can assert on
-interactions (`expect(widgets.create).not.toHaveBeenCalled()`) as well as return values.
-Shared test data builders live in `test/factories.ts`.
-
-Dependencies are passed as arguments and wired in exactly one place,
-`src/server/container.ts`. No DI framework, no decorators.
-
-### End-to-end types
-
-`src/web/lib/api.ts` does `hc<AppType>()` against the server's own route type. No codegen
-and no duplicated interfaces — rename a response field and `npm run typecheck` fails in
-the frontend.
-
-This depends on routes being defined as **one unbroken method chain**
-(`new Hono().get(...).post(...)`). Break the chain and it still works at runtime while the
-client's types silently degrade, with no error. There's a comment saying so in
-`src/server/routes/widgets.ts`; please leave it there.
-
-Hono's client doesn't throw on 4xx, and routes that can fail have a _union_ response type.
-`unwrap()` in `api.ts` narrows to the success body and throws on errors.
-
-### Frontend state
-
-Two tiers, and that's the whole policy:
-
-1. **Server-derived data → TanStack Query**, with `queryOptions` factories in
-   `src/web/lib/queries.ts` so a key can never drift from its fetcher.
-2. **Ephemeral UI state → `useState`** in the component that owns it.
-
-Filters and anything shareable go in the URL as typed search params (see
-`widgets.index.tsx`). There is deliberately **no Redux or Zustand** — in a dashboard,
-nearly all state is a cached copy of server data, which Query already handles.
-
-### Jobs
-
-pg-boss runs in the same process as the HTTP server (one thing to deploy) and keeps its
-tables in a separate `pgboss` schema. A job handler is a **thin trigger that calls a
-service** — the work itself lives in the service so it's testable without a queue.
-`src/server/jobs/worker.ts` explains how to split the worker into its own process when
-you need to.
-
-## Testing
-
-Three Vitest projects:
-
-- **`server`** — unit tests, no database. Most tests belong here.
-- **`db`** — `*.db.test.ts`, real Postgres. Needs `npm run db:up`.
-- **`web`** — components in jsdom.
-
-DB tests use **transactional fixtures** — the same pattern as Rails or Django. A global
-setup creates `app_test` and pushes `schema.ts` into it once per run; then every test runs
-inside a transaction that is rolled back afterwards. Nothing is ever committed, so there's
-no cleanup step and no way for one test's rows to leak into another.
-
-Use `dbTest` instead of `it`:
-
-```ts
-dbTest('does a thing', async ({ db }) => {
-  const repo = createWidgetRepository(db) // db is the transaction
-})
-```
-
-Workers share the one database safely, because uncommitted rows are invisible to other
-connections. `Database` is typed as `PgDatabase` rather than `PostgresJsDatabase` so a
-transaction handle satisfies it — which is also what would let a service span several
-repositories in one transaction later.
-
-This is what makes `db:push` safe as the default: the harness derives its schema from
-`schema.ts`, never from committed SQL.
-
-### Schema changes: `db:push`
+## Schema changes: `db:push`
 
 ```bash
 # edit src/server/db/schema.ts, then:

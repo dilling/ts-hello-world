@@ -1,15 +1,12 @@
 import { z } from 'zod'
 
 /**
- * These schemas are the single source of truth for the Widget DTOs.
+ * Single source of truth for the Widget DTOs: the server validates against these schemas
+ * and the web app imports the inferred types.
  *
- * The server validates requests against them (`@hono/zod-validator`) and the web app
- * imports the inferred types. Change a field here and both sides move together.
- *
- * NOTE: timestamps are ISO strings, not `Date`. Everything crossing the wire is JSON,
- * so the repository converts `Date` -> string at the data-access boundary. If domain
- * types claimed `Date` here, the typed RPC client would promise `Date` and hand you a
- * string at runtime — a genuinely annoying bug to chase at 2am.
+ * Timestamps are ISO strings, not `Date` — everything here crosses the wire as JSON, and
+ * claiming `Date` would have the RPC client promise one and hand you a string at runtime.
+ * The repository converts at the data-access boundary.
  */
 
 export const WIDGET_STATUSES = ['active', 'paused', 'archived'] as const
@@ -41,17 +38,14 @@ export const createWidgetSchema = widgetFieldsSchema.extend({
 export type CreateWidgetInput = z.infer<typeof createWidgetSchema>
 
 /**
- * Derived from the no-defaults base, NOT `createWidgetSchema.partial()`. `.partial()`
- * keeps the defaults, so `PATCH { score }` would also write `status: 'active'` and
- * silently un-pause a paused widget.
+ * Derived from the no-defaults base, NOT `createWidgetSchema.partial()` — that keeps the
+ * defaults, so `PATCH { score }` would also write `status: 'active'` and un-pause a
+ * paused widget.
  */
 export const updateWidgetSchema = widgetFieldsSchema.partial()
 export type UpdateWidgetInput = z.infer<typeof updateWidgetSchema>
 
-/**
- * Query params arrive as strings, hence `coerce`. This is the shape that becomes
- * typed search params on the frontend route — the mechanism real filters should use.
- */
+/** Query params arrive as strings, hence `coerce`. Also the frontend's search params. */
 export const listWidgetsQuerySchema = z.object({
   status: widgetStatusSchema.optional(),
   minScore: z.coerce.number().int().min(0).max(100).optional(),

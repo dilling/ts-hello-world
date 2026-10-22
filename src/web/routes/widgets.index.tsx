@@ -9,17 +9,7 @@ import { api, unwrap } from '@web/lib/api'
 import { invalidateWidgets, widgetQueries } from '@web/lib/queries'
 import { RefreshCw } from 'lucide-react'
 
-/**
- * PATTERN: a data-driven route.
- *
- *  - `validateSearch` with a zod schema gives typed, validated URL state. The filter
- *    lives in the URL, so it survives reload and is shareable — this is the mechanism
- *    the real `?team=&since=` filters should use.
- *  - `loader` prefetches via the same queryOptions the component consumes, so
- *    navigation doesn't flash a spinner.
- *  - `useSuspenseQuery` then reads from cache and never returns undefined, which
- *    removes the usual `if (!data) return null` noise.
- */
+/** The data-driven route template. See src/web/README.md. */
 export const Route = createFileRoute('/widgets/')({
   validateSearch: listWidgetsQuerySchema,
   loaderDeps: ({ search }) => search,
