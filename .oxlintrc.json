@@ -14,7 +14,8 @@
     "drizzle",
     "src/web/routeTree.gen.ts",
     "node_modules",
-    "test/fixtures"
+    "test/fixtures",
+    ".claude"
   ],
   "rules": {
     "typescript/no-floating-promises": "error",
@@ -52,6 +53,13 @@
         "no-console": "off",
         "vitest/require-to-throw-message": "off",
         "typescript/unbound-method": "off"
+      }
+    },
+    {
+      "files": ["**/*.db.test.ts", "test/db/setup.ts"],
+      "rules": {
+        "vitest/no-standalone-expect": "off",
+        "no-empty-pattern": "off"
       }
     }
   ]

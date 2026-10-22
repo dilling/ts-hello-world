@@ -12,3 +12,6 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# Claude Code worktrees — full repo copies, not source.
+.claude/worktrees/

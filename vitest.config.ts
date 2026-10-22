@@ -32,6 +32,8 @@ export default defineConfig({
           name: 'db',
           environment: 'node',
           include: ['src/server/**/*.db.test.ts'],
+          // globalSetup builds the template database once; setupFiles clones it per worker.
+          globalSetup: ['./test/db/global-setup.ts'],
           setupFiles: ['./test/db/setup.ts'],
         },
       },

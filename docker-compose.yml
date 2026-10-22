@@ -45,14 +45,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Migrations run here rather than in the image build: the build has no database, and
-    # this guarantees the schema is current before the server accepts traffic.
+    # Schema is applied here rather than in the image build: the build has no database,
+    # and this guarantees it's current before the server accepts traffic.
     #
     # The seed runs too so that a fresh `docker compose up` serves a populated dashboard
     # instead of an empty one that looks broken. It's idempotent (ON CONFLICT DO NOTHING),
     # so restarts are safe. DELETE `db:seed` from this line before deploying anywhere
     # real — you don't want sample rows in a production database.
-    command: sh -c "npm run db:migrate && npm run db:seed && npm start"
+    command: sh -c "npm run db:push -- --force && npm run db:seed && npm start"
     healthcheck:
       test:
         [
