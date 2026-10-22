@@ -8,13 +8,7 @@ import type {
 import type { Database } from '../db/client'
 import { type WidgetRow, widgets } from '../db/schema'
 
-/**
- * PATTERN: a repository is data access ONLY — queries in, domain objects out.
- * No business rules, no logging, no HTTP. Services depend on this *interface*, never
- * on `Database`, which is what lets `widget.service.test.ts` run without Postgres.
- *
- * Copy this file's shape for each new entity: interface, row mapper, Drizzle factory.
- */
+/** Data access only — the shape to copy per entity. See src/server/README.md. */
 export interface WidgetRepository {
   list(filter?: ListWidgetsQuery): Promise<Widget[]>
   findById(id: string): Promise<Widget | null>
@@ -28,11 +22,7 @@ export interface WidgetRepository {
   recordRefresh(updates: Array<{ id: string; score: number }>, at: Date): Promise<number>
 }
 
-/**
- * The serialization boundary: `Date` columns become ISO strings here, so every layer
- * above this one — service, route, RPC client, React component — sees one consistent
- * `Widget` type. See the note in src/shared/widget.ts.
- */
+/** The serialization boundary: `Date` columns become ISO strings. See src/shared/widget.ts. */
 function toWidget(row: WidgetRow): Widget {
   return {
     id: row.id,
@@ -74,8 +64,7 @@ export function createWidgetRepository(db: Database): WidgetRepository {
 
     async create(input) {
       const [row] = await db.insert(widgets).values(input).returning()
-      // `.returning()` always yields a row on a successful insert; a throw here means
-      // something is badly wrong, so fail loudly rather than returning a bogus object.
+      // Unreachable on a successful insert; fail loudly rather than fabricate a row.
       if (!row) throw new Error('insert returned no row')
       return toWidget(row)
     },
@@ -117,13 +106,10 @@ export function createWidgetRepository(db: Database): WidgetRepository {
     async recordRefresh(updates, at) {
       if (updates.length === 0) return 0
 
-      // One statement for the whole batch rather than N round-trips — the pattern to
-      // reach for when a job writes back results for a few hundred rows.
-      //
-      // Built with the query builder, NOT `db.execute(sql\`...\`)`: a raw template
-      // bypasses drizzle's column type mappers, so a `Date` would reach the driver
-      // unconverted and blow up with ERR_INVALID_ARG_TYPE. Going through `.update()`
-      // means `lastRefreshedAt` gets the timestamptz mapper it needs.
+      // One statement for the whole batch, built with the query builder and NOT
+      // `db.execute(sql\`...\`)`: a raw template bypasses drizzle's column type mappers, so
+      // `lastRefreshedAt` would reach the driver as an unconverted Date and throw
+      // ERR_INVALID_ARG_TYPE.
       const scoreCase = sql.join(
         [
           sql`(case`,

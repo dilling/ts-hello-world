@@ -5,24 +5,8 @@ import { api, unwrap, unwrapEmpty } from './api'
 import { invalidateWidgets } from './queries'
 
 /**
- * PATTERN: the write side. `queries.ts` reads, this file writes.
- *
- * Every mutation in the app is a hook in a file like this one, and every one does the
- * same four things in the same order:
- *
- *   1. call the typed RPC client through `unwrap` (or `unwrapEmpty` for a 204),
- *   2. invalidate the queries the write invalidated,
- *   3. say something on success,
- *   4. say something on failure.
- *
- * Steps 3 and 4 are the ones people skip. A `useMutation` with no `onError` fails
- * *silently* — the request 500s, nothing changes on screen, and the next twenty minutes
- * go into debugging the wrong layer. `reportError` is the floor; override `onError` if a
- * mutation needs to do more.
- *
- * Deliberately NOT here: optimistic updates. They need a cancel + snapshot + rollback
- * dance in `onMutate`/`onError` and they are not worth it on a list that refetches in
- * under 100ms. Add one only where a human can actually feel the latency.
+ * The write side; `queries.ts` reads. Every mutation unwraps, invalidates, and toasts both
+ * outcomes — a `useMutation` with no `onError` fails silently. See src/web/README.md.
  */
 
 /** Default failure handling: surface the server's message, don't swallow it. */
@@ -79,10 +63,7 @@ export function useDeleteWidget() {
   })
 }
 
-/**
- * Refresh-now. Returns a count rather than a widget, which is why it doesn't follow the
- * shape above exactly — the toast reports how many rows the job touched.
- */
+/** Refresh-now. Returns a count rather than a widget, so the toast differs. */
 export function useRefreshWidgets() {
   const queryClient = useQueryClient()
 

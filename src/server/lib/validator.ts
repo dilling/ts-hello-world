@@ -3,13 +3,9 @@ import type { ValidationTargets } from 'hono'
 import { type ZodType, z } from 'zod'
 
 /**
- * Use this instead of `zValidator` directly.
- *
- * Out of the box zValidator responds with its own `{ success: false, error: ZodError }`
- * body and never reaches `app.onError`, so validation failures would be the one error
- * shape in the API that doesn't match the others. This wrapper supplies the error hook
- * so every failure — validation, domain, unexpected — comes back as
- * `{ error: { code, message } }`.
+ * Use this instead of `zValidator` directly. Bare zValidator responds with its own
+ * `{ success: false, error: ZodError }` body and never reaches `app.onError`, making
+ * validation the one error shape in the API that doesn't match the rest.
  */
 export function validate<T extends ZodType, Target extends keyof ValidationTargets>(
   target: Target,

@@ -2,22 +2,7 @@ import type { ListWidgetsQuery, WidgetStatus } from '@shared/widget'
 import { type QueryClient, queryOptions } from '@tanstack/react-query'
 import { api, unwrap } from './api'
 
-/**
- * PATTERN: frontend state has exactly two tiers.
- *
- *   1. Server-derived data -> TanStack Query (this file).
- *   2. Ephemeral UI state  -> useState in the component that owns it.
- *
- * There is deliberately NO Redux / Zustand / global store. Nearly all state in a
- * dashboard like this is a cached copy of server data, and Query already handles
- * caching, refetching, dedup, and invalidation. Please don't add one at 2am; if you
- * genuinely need cross-route client state (a wizard, say), reach for a React context
- * first and bring it up with the team.
- *
- * `queryOptions` keeps the key and the fetcher in one object, so a key can never drift
- * from its query. The same object is reusable in a route loader, a `useQuery`, and a
- * `queryClient.invalidateQueries` call.
- */
+/** Two-tier state; no global store. See src/web/README.md. */
 export const widgetQueries = {
   all: () => ['widgets'] as const,
 

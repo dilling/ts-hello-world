@@ -1,25 +1,12 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens, in shadcn/ui's canonical Tailwind-v4 shape. Two layers, and the split
- * matters:
+ * Design tokens in shadcn's two-layer shape — raw token in `:root`, re-exported as a
+ * Tailwind token in `@theme inline`. Declare new ones in BOTH: a token missing from
+ * either renders the component wrong with no error. See src/web/README.md.
  *
- *   :root        declares the RAW token (`--popover`). Generated components reference
- *                these directly in inline styles — `ui/sonner.tsx` sets
- *                `--normal-bg: var(--popover)`, for instance.
- *   @theme inline re-exports each one as a Tailwind token (`--color-popover`), which is
- *                what makes the `bg-popover` / `border-input` / `ring-ring` utilities
- *                exist.
- *
- * Keep BOTH in sync. A token missing from `:root` breaks inline styles; one missing from
- * `@theme` makes its utility class generate no CSS — in both cases the component renders
- * wrong with no error to tell you why. If you add a shadcn component and it looks
- * unstyled, a missing token here is the first thing to check.
- *
- * This is also why `@theme inline` is used rather than plain `@theme`: `inline` makes the
- * utilities point at `var(--token)` instead of copying the literal value, so a light
- * theme would only need a `.dark`-style override block on `:root`. The app is dark-only
- * today — there is no light palette and no `.dark` class anywhere.
+ * `@theme inline` (not plain `@theme`) so utilities point at `var(--token)` rather than
+ * copying the value, which is what a light theme would need. The app is dark-only today.
  */
 :root {
   /* Surfaces */

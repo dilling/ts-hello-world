@@ -65,9 +65,8 @@ function WidgetDetail() {
               disabled={deleteWidget.isPending}
               onConfirm={() => {
                 deleteWidget.mutate(widgetId, {
-                  // Navigate away only once the delete lands, or the detail query would
-                  // refetch a row that no longer exists and throw a 404 into the error
-                  // component.
+                  // Navigate only once the delete lands, or the detail query refetches a
+                  // row that no longer exists and throws a 404 at the error component.
                   onSuccess: () => void navigate({ to: '/widgets' }),
                 })
               }}

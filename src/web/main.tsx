@@ -26,16 +26,9 @@ const router = createRouter({
   context: { queryClient },
   defaultPreload: 'intent',
 
-  /*
-   * These three defaults are the app's safety net, and they're set here rather than
-   * per-route on purpose: a new route file inherits all of them for free, so nobody has
-   * to remember.
-   *
-   * Without them, every route that fetches with `useSuspenseQuery` — which is all of
-   * them — fails *invisibly*. The query throws, the route unmounts, and TanStack falls
-   * back to its own minimal renderer, which reads as "the app died". A failed API call
-   * should look like a failed API call.
-   */
+  // Set here, not per-route, so every future route inherits them. Without them a
+  // throwing useSuspenseQuery unmounts the page and reads as "the app died".
+  // See src/web/README.md.
   defaultErrorComponent: AppError,
   defaultPendingComponent: AppPending,
   defaultNotFoundComponent: AppNotFound,

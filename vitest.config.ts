@@ -1,15 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-/**
- * Three projects so the fast tests stay fast:
- *
- *   server — pure unit tests. No Docker. This is where most tests should live.
- *   db     — hits real Postgres. Needs `npm run db:up`.
- *   web    — components in jsdom.
- *
- * `npm run test:unit` runs server + web only, so you can work with Docker stopped.
- */
+/** Three projects — server (no Docker), db (real Postgres), web (jsdom). See test/README.md. */
 export default defineConfig({
   plugins: [react()],
   resolve: { tsconfigPaths: true },

@@ -5,10 +5,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from '@web/components/ui/sonner'
 import { Boxes } from 'lucide-react'
 
-/**
- * The root route also declares the router's context type, which is what makes
- * `context.queryClient` typed inside every loader in this app.
- */
+/** Declares the router's context type, which is what types `context.queryClient` in loaders. */
 export interface RouterContext {
   queryClient: QueryClient
 }
@@ -42,15 +39,8 @@ function RootLayout() {
       {/* Mounted once, app-wide. Every mutation reports through this — see lib/mutations.ts. */}
       <Toaster position="bottom-right" />
 
-      {/*
-       * Both devtools panels, dev-only. `import.meta.env.DEV` is statically false in a
-       * production build, so Rolldown drops these and their imports from the bundle.
-       *
-       * Please actually use them. The Query panel shows every cache entry, its key and
-       * its freshness, which answers "why is this showing stale data" in two seconds —
-       * that question otherwise turns into twenty minutes of reading generated code
-       * looking for a bug that is really just a query key.
-       */}
+      {/* Dev-only: `import.meta.env.DEV` is statically false in a production build, so
+          Rolldown drops these and their imports from the bundle. */}
       {import.meta.env.DEV ? (
         <>
           <ReactQueryDevtools buttonPosition="bottom-left" />

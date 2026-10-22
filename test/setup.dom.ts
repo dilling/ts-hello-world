@@ -7,13 +7,9 @@ afterEach(() => {
 })
 
 /*
- * jsdom stubs for browser APIs the real components use.
- *
- * Radix primitives (Select, Dialog, AlertDialog) and recharts' ResponsiveContainer call
- * into layout APIs that jsdom doesn't implement. Without these you get either a console
- * full of "Not implemented: Window's scrollTo()" or a hard "ResizeObserver is not
- * defined" — neither of which is a bug in the component under test, and both of which
- * cost someone half an hour.
+ * jsdom stubs for layout APIs it doesn't implement but Radix primitives and recharts'
+ * ResponsiveContainer call. Without them you get "ResizeObserver is not defined" or a
+ * console full of "Not implemented: Window's scrollTo()" — neither a real failure.
  */
 if (!('ResizeObserver' in globalThis)) {
   globalThis.ResizeObserver = class {

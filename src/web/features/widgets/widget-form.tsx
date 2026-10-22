@@ -13,28 +13,10 @@ import { Input } from '@web/components/ui/input'
 import type { ReactNode } from 'react'
 
 /**
- * PATTERN: the form. Copy this file for every new form in the app.
+ * The form template — copy this file. See src/web/README.md.
  *
- * Three rules, and they're the whole convention:
- *
- *  1. VALIDATE WITH THE SHARED SCHEMA. `validators.onChange` is handed
- *     `widgetFieldsSchema` from `src/shared/widget.ts` — the same object the server's
- *     write schemas are built from. Zod 4 implements Standard Schema, so TanStack Form
- *     consumes it directly: no adapter package, no second copy of the rules, and a
- *     constraint added on the server can't silently stop being enforced in the UI.
- *     Use the no-defaults base, NOT `createWidgetSchema` — a `.default()` makes a field
- *     optional on the input side and the types won't line up. There's a longer note on
- *     this in `src/shared/widget.ts`.
- *  2. THE FORM DOESN'T KNOW HOW TO SAVE. It takes an `onSubmit` and calls it. The
- *     mutation lives in the route, so this component is testable without a QueryClient
- *     and reusable for both create and edit.
- *  3. ONE `<Field>` WRAPPER renders label + control + error. Don't hand-roll error
- *     markup per field; a field with nowhere to put its message is how invalid forms end
- *     up failing silently on submit.
- *
- * `defaultValues` is typed as `WidgetFields`, so `status` and `score` are required here
- * even though the API defaults them — the form always has a concrete value for every
- * control, which is what keeps the inputs from going uncontrolled.
+ * `defaultValues` is `WidgetFields`, the no-defaults base, so every control starts with a
+ * concrete value and the inputs can't go uncontrolled.
  */
 export interface WidgetFormProps {
   defaultValues: WidgetFields
@@ -119,8 +101,7 @@ export function WidgetForm({ defaultValues, onSubmit, submitLabel, onCancel }: W
               value={field.state.value}
               aria-invalid={field.state.meta.errors.length > 0}
               onBlur={field.handleBlur}
-              // A number input still yields a string, and the schema wants an int —
-              // so coerce here rather than letting zod reject the string.
+              // A number input still yields a string; the schema wants an int.
               onChange={(event) => field.handleChange(event.target.valueAsNumber || 0)}
             />
           </Field>
@@ -146,9 +127,8 @@ export function WidgetForm({ defaultValues, onSubmit, submitLabel, onCancel }: W
 }
 
 /**
- * Label + control + validation message. `errors` comes straight off
- * `field.state.meta.errors`, whose entries are Standard Schema issues (objects with a
- * `message`) rather than plain strings — hence the narrowing below.
+ * Label + control + validation message. `errors` is `field.state.meta.errors`, whose
+ * entries are Standard Schema issues rather than strings — hence the narrowing below.
  */
 function Field({
   label,

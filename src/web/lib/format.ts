@@ -1,10 +1,6 @@
 /**
- * Display formatting for wire values. Every DTO timestamp is an ISO *string* (see the
- * note in `src/shared/widget.ts`), so there is exactly one place that turns one into
- * something a human reads.
- *
- * This file exists because `formatTimestamp` had already been copy-pasted into two
- * components. Put new formatters here rather than inlining a third copy.
+ * Display formatting for wire values — the one place an ISO string becomes something a
+ * human reads. Put new formatters here rather than inlining them in a component.
  */
 
 /** ISO string -> locale date+time. `null` means "the server has never set this". */

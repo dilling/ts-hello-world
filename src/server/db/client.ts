@@ -4,10 +4,8 @@ import postgres from 'postgres'
 import * as schema from './schema'
 
 /**
- * Deliberately `PgDatabase` rather than `PostgresJsDatabase`, so a transaction handle
- * satisfies it too. That lets a repository be constructed against either the pool or an
- * open transaction — which is what tests use to roll back, and what a service would use
- * to span several repositories in one transaction.
+ * Deliberately `PgDatabase` and not `PostgresJsDatabase`, so a transaction handle
+ * satisfies it too and a repository can be built against either. See test/README.md.
  */
 export type Database = PgDatabase<PostgresJsQueryResultHKT, typeof schema>
 

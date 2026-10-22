@@ -2,13 +2,10 @@ import { index, integer, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/p
 import type { WidgetStatus } from '../../shared/widget'
 
 /**
- * Drizzle table definitions. `npm run db:generate` turns changes here into SQL in
- * ./drizzle, which `npm run db:migrate` applies and the test harness replays.
- *
- * Deliberately NOT using `pgEnum` for `status`: altering a Postgres enum is a migration
- * chore, and drizzle emits schema-qualified `CREATE TYPE "public"."..."` which collides
- * when the test harness replays migrations into per-worker schemas. A varchar narrowed
- * with `$type<>()` gives the same compile-time safety, and zod guards the edge.
+ * `status` is deliberately NOT a `pgEnum`: altering a Postgres enum is a migration chore,
+ * and drizzle emits schema-qualified `CREATE TYPE "public"."..."` that collides when the
+ * harness replays into per-worker schemas. A varchar narrowed with `$type<>()` gives the
+ * same compile-time safety, and zod guards the edge.
  */
 export const widgets = pgTable(
   'widgets',

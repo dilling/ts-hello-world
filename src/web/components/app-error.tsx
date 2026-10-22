@@ -5,16 +5,11 @@ import { ApiError } from '@web/lib/api'
 import { RotateCcw, TriangleAlert } from 'lucide-react'
 
 /**
- * PATTERN: every route failure lands here.
+ * Every route failure lands here, via `defaultErrorComponent` in `main.tsx`.
+ * See src/web/README.md.
  *
- * Routes fetch with `useSuspenseQuery`, which *throws* on error by design. Without a
- * route-level error component that throw unmounts the page and TanStack falls back to
- * its own bare renderer — which looks like the app silently died. This is wired up as
- * the router's `defaultErrorComponent` in `main.tsx`, so a new route gets it for free.
- *
- * `reset` clears the router's error state; `router.invalidate()` then re-runs the
- * loaders, which re-fetches the failed query. Both are needed — resetting without
- * invalidating just re-throws the cached error.
+ * Retrying needs both calls: `reset` clears the router's error state, and
+ * `router.invalidate()` re-runs the loaders. Resetting alone re-throws the cached error.
  */
 export function AppError({ error, reset }: ErrorComponentProps) {
   const router = useRouter()

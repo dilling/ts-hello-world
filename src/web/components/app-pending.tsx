@@ -1,12 +1,9 @@
 import { Loader2 } from 'lucide-react'
 
 /**
- * Shown while a route loader is in flight. Wired up as the router's
- * `defaultPendingComponent` in `main.tsx`, which is what stops a slow first paint from
- * being an empty white page.
- *
- * Deliberately not a skeleton: a generic spinner can't go stale when a page's layout
- * changes. Add a per-route `pendingComponent` if a specific page earns a skeleton.
+ * Shown while a route loader is in flight, via `defaultPendingComponent` in `main.tsx`.
+ * A spinner rather than a skeleton, so it can't go stale as layouts change; add a
+ * per-route `pendingComponent` where a page earns one.
  */
 export function AppPending() {
   return (

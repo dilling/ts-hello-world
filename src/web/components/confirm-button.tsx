@@ -13,23 +13,13 @@ import { Button, type buttonVariants } from '@web/components/ui/button'
 import type { VariantProps } from 'class-variance-authority'
 import type { ReactNode } from 'react'
 
-/** Derived from the generated component rather than re-declared, so re-running
- * `shadcn add button` can't leave this out of step. */
+/** Derived from the generated component so `shadcn add button` can't leave it stale. */
 type ButtonVariant = VariantProps<typeof buttonVariants>['variant']
 
 /**
- * PATTERN: destructive actions confirm first. Use this instead of `window.confirm`, and
- * instead of hand-rolling a modal.
- *
- * It wraps shadcn's `AlertDialog` (Radix under the hood), which is doing more than it
- * looks: focus moves into the dialog and is trapped there, focus returns to the trigger
- * on close, Escape closes, the page behind is inert and scroll-locked, and the thing is
- * announced as `role="alertdialog"`. That is the entire reason this repo took the Radix
- * dependency rather than hand-rolling overlays — none of it is visible in a demo, and
- * all of it is wrong in a hand-written modal.
- *
- * Declarative, not a `useConfirm()` promise hook: the trigger and the confirmation live
- * in one place, there's no provider to mount, and nothing has to live in context.
+ * Destructive actions confirm first. Use this rather than `window.confirm` or a
+ * hand-rolled modal — Radix's `AlertDialog` brings the focus trap, scroll lock, inert
+ * background and `role="alertdialog"` that a hand-written one silently lacks.
  */
 export interface ConfirmButtonProps {
   children: ReactNode

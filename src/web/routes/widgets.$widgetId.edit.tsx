@@ -6,9 +6,8 @@ import { useUpdateWidget } from '@web/lib/mutations'
 import { widgetQueries } from '@web/lib/queries'
 
 /**
- * Edit route — the same `WidgetForm`, seeded from the cached widget and pointed at PATCH
- * instead of POST. The loader reuses the detail query, so arriving here from the detail
- * page costs no extra request.
+ * Edit route — the same `WidgetForm`, pointed at PATCH. The loader reuses the detail
+ * query, so arriving from the detail page costs no extra request.
  */
 export const Route = createFileRoute('/widgets/$widgetId/edit')({
   loader: ({ context, params }) =>

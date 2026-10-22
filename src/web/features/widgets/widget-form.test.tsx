@@ -5,12 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { WidgetForm } from './widget-form'
 
 /**
- * Form test template.
- *
- * No router and no QueryClient, because the form doesn't fetch or navigate — it takes an
- * `onSubmit` and calls it. That's the payoff for keeping the mutation in the route: the
- * interesting behaviour (validation, submit, disabled states) is testable with nothing
- * mocked but a spy.
+ * Form test template. No router and no QueryClient — the form takes an `onSubmit` and
+ * calls it, so validation and submit states are testable with nothing mocked but a spy.
  */
 function renderForm(onSubmit = vi.fn<(value: WidgetFields) => Promise<void>>()) {
   const onCancel = vi.fn<() => void>()

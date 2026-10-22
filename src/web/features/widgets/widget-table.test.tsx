@@ -11,15 +11,8 @@ import { describe, expect, it } from 'vitest'
 import { WidgetTable } from './widget-table'
 
 /**
- * Component test template.
- *
- * `WidgetTable` renders `<Link>`, so it needs a router in context. A memory-history
- * router is the lightweight way to provide one — no jsdom navigation, no mocking of
- * TanStack Router internals.
- *
- * Note what isn't here: no fetch mocking. The component takes data as a prop, which is
- * why it's testable like this. Keep fetching in routes and hooks, rendering in
- * components.
+ * Component test template. `WidgetTable` renders `<Link>`, so it needs a router in
+ * context; a memory-history router provides one without mocking Router internals.
  */
 function renderWithRouter(ui: React.ReactNode) {
   const rootRoute = createRootRoute()
