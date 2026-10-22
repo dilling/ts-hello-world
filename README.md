@@ -154,13 +154,26 @@ Three Vitest projects:
 - **`db`** — `*.db.test.ts`, real Postgres. Needs `npm run db:up`.
 - **`web`** — components in jsdom.
 
-Each Vitest worker gets **its own database**, cloned from a template:
-`CREATE DATABASE app_test_worker_1 TEMPLATE app_test_template`. A global setup pushes
-`schema.ts` into the template once per run; Postgres then copies it per worker, which is
-fast and keeps workers fully isolated. Everything is dropped on teardown.
+DB tests use **transactional fixtures** — the same pattern as Rails or Django. A global
+setup creates `app_test` and pushes `schema.ts` into it once per run; then every test runs
+inside a transaction that is rolled back afterwards. Nothing is ever committed, so there's
+no cleanup step and no way for one test's rows to leak into another.
+
+Use `dbTest` instead of `it`:
+
+```ts
+dbTest('does a thing', async ({ db }) => {
+  const repo = createWidgetRepository(db) // db is the transaction
+})
+```
+
+Workers share the one database safely, because uncommitted rows are invisible to other
+connections. `Database` is typed as `PgDatabase` rather than `PostgresJsDatabase` so a
+transaction handle satisfies it — which is also what would let a service span several
+repositories in one transaction later.
 
 This is what makes `db:push` safe as the default: the harness derives its schema from
-`schema.ts`, not from committed SQL.
+`schema.ts`, never from committed SQL.
 
 ### Schema changes: `db:push`
 

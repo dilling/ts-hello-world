@@ -1,8 +1,15 @@
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import type { PgDatabase } from 'drizzle-orm/pg-core'
+import { drizzle, type PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 
-export type Database = PostgresJsDatabase<typeof schema>
+/**
+ * Deliberately `PgDatabase` rather than `PostgresJsDatabase`, so a transaction handle
+ * satisfies it too. That lets a repository be constructed against either the pool or an
+ * open transaction — which is what tests use to roll back, and what a service would use
+ * to span several repositories in one transaction.
+ */
+export type Database = PgDatabase<PostgresJsQueryResultHKT, typeof schema>
 
 export interface DatabaseHandle {
   db: Database
