@@ -1,6 +1,7 @@
 import type { Widget } from '@shared/widget'
 import { Link } from '@tanstack/react-router'
 import { Badge } from '@web/components/ui/badge'
+import { formatTimestamp } from '@web/lib/format'
 import {
   Table,
   TableBody,
@@ -55,9 +56,4 @@ export function WidgetTable({ widgets }: { widgets: Widget[] }) {
       </TableBody>
     </Table>
   )
-}
-
-function formatTimestamp(value: string | null): string {
-  if (!value) return 'never'
-  return new Date(value).toLocaleString()
 }

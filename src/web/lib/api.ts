@@ -40,6 +40,19 @@ export async function unwrap<R extends UnwrappableResponse>(response: R): Promis
   return (await response.json()) as SuccessBody<R>
 }
 
+/**
+ * For routes that return `204 No Content` — `DELETE /widgets/:id`, for example.
+ *
+ * Don't reach for `unwrap` there: it always calls `.json()`, and parsing an empty body
+ * throws a `SyntaxError` *after* the request already succeeded. You'd see a mutation
+ * report failure for a delete that actually worked.
+ */
+export async function unwrapEmpty(response: UnwrappableResponse): Promise<void> {
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorMessage(response))
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
