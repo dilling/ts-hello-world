@@ -25,11 +25,18 @@ export const widgetSchema = z.object({
 })
 export type Widget = z.infer<typeof widgetSchema>
 
-const widgetFieldsSchema = z.object({
+/**
+ * The editable fields with NO defaults — the base both write schemas derive from, and the
+ * one the frontend form validates against. A `.default()` makes a field optional on the
+ * *input* side, so handing a form `createWidgetSchema` doesn't typecheck: the form always
+ * holds a concrete value for every control.
+ */
+export const widgetFieldsSchema = z.object({
   name: z.string().trim().min(1).max(100),
   status: widgetStatusSchema,
   score: z.number().int().min(0).max(100),
 })
+export type WidgetFields = z.infer<typeof widgetFieldsSchema>
 
 export const createWidgetSchema = widgetFieldsSchema.extend({
   status: widgetStatusSchema.default('active'),

@@ -1,13 +1,13 @@
 import { listWidgetsQuerySchema, WIDGET_STATUSES } from '@shared/widget'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Button } from '@web/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@web/components/ui/card'
 import { WidgetScoreChart } from '@web/features/widgets/widget-score-chart'
 import { WidgetTable } from '@web/features/widgets/widget-table'
-import { api, unwrap } from '@web/lib/api'
-import { invalidateWidgets, widgetQueries } from '@web/lib/queries'
-import { RefreshCw } from 'lucide-react'
+import { useRefreshWidgets } from '@web/lib/mutations'
+import { widgetQueries } from '@web/lib/queries'
+import { Plus, RefreshCw } from 'lucide-react'
 
 /** The data-driven route template. See src/web/README.md. */
 export const Route = createFileRoute('/widgets/')({
@@ -20,14 +20,12 @@ export const Route = createFileRoute('/widgets/')({
 function WidgetsDashboard() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const queryClient = useQueryClient()
 
   const { data: widgets } = useSuspenseQuery(widgetQueries.list(search))
 
-  const refresh = useMutation({
-    mutationFn: async () => unwrap(await api.widgets.refresh.$post()),
-    onSuccess: () => invalidateWidgets(queryClient),
-  })
+  // The mutation itself lives in `lib/mutations.ts` — invalidation and the success and
+  // failure toasts come with it, so the route only decides when to fire it.
+  const refresh = useRefreshWidgets()
 
   const average =
     widgets.length === 0
@@ -44,10 +42,20 @@ function WidgetsDashboard() {
           </p>
         </div>
 
-        <Button onClick={() => refresh.mutate()} disabled={refresh.isPending}>
-          <RefreshCw className={refresh.isPending ? 'animate-spin' : undefined} />
-          {refresh.isPending ? 'Refreshing…' : 'Refresh now'}
-        </Button>
+        <div className="flex gap-2">
+          <Link
+            to="/widgets/new"
+            className="hover:bg-accent inline-flex h-9 items-center gap-2 rounded-md border px-4 text-sm font-medium"
+          >
+            <Plus className="size-4" />
+            New widget
+          </Link>
+
+          <Button onClick={() => refresh.mutate()} disabled={refresh.isPending}>
+            <RefreshCw className={refresh.isPending ? 'animate-spin' : undefined} />
+            {refresh.isPending ? 'Refreshing…' : 'Refresh now'}
+          </Button>
+        </div>
       </div>
 
       {/* Filter state goes into the URL, not useState. */}

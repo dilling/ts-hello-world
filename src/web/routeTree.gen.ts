@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WidgetsIndexRouteImport } from './routes/widgets.index'
 import { Route as WidgetsWidgetIdRouteImport } from './routes/widgets.$widgetId'
+import { Route as WidgetsNewRouteImport } from './routes/widgets.new'
+import { Route as WidgetsWidgetIdEditRouteImport } from './routes/widgets.$widgetId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,34 +30,67 @@ const WidgetsWidgetIdRoute = WidgetsWidgetIdRouteImport.update({
   path: '/widgets/$widgetId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WidgetsNewRoute = WidgetsNewRouteImport.update({
+  id: '/widgets/new',
+  path: '/widgets/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WidgetsWidgetIdEditRoute = WidgetsWidgetIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => WidgetsWidgetIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/widgets/$widgetId': typeof WidgetsWidgetIdRoute
+  '/widgets/$widgetId': typeof WidgetsWidgetIdRouteWithChildren
+  '/widgets/new': typeof WidgetsNewRoute
   '/widgets/': typeof WidgetsIndexRoute
+  '/widgets/$widgetId/edit': typeof WidgetsWidgetIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/widgets/$widgetId': typeof WidgetsWidgetIdRoute
+  '/widgets/$widgetId': typeof WidgetsWidgetIdRouteWithChildren
+  '/widgets/new': typeof WidgetsNewRoute
   '/widgets': typeof WidgetsIndexRoute
+  '/widgets/$widgetId/edit': typeof WidgetsWidgetIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/widgets/$widgetId': typeof WidgetsWidgetIdRoute
+  '/widgets/$widgetId': typeof WidgetsWidgetIdRouteWithChildren
+  '/widgets/new': typeof WidgetsNewRoute
   '/widgets/': typeof WidgetsIndexRoute
+  '/widgets/$widgetId/edit': typeof WidgetsWidgetIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/widgets/$widgetId' | '/widgets/'
+  fullPaths:
+    | '/'
+    | '/widgets/$widgetId'
+    | '/widgets/new'
+    | '/widgets/'
+    | '/widgets/$widgetId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/widgets/$widgetId' | '/widgets'
-  id: '__root__' | '/' | '/widgets/$widgetId' | '/widgets/'
+  to:
+    | '/'
+    | '/widgets/$widgetId'
+    | '/widgets/new'
+    | '/widgets'
+    | '/widgets/$widgetId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/widgets/$widgetId'
+    | '/widgets/new'
+    | '/widgets/'
+    | '/widgets/$widgetId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  WidgetsWidgetIdRoute: typeof WidgetsWidgetIdRoute
+  WidgetsWidgetIdRoute: typeof WidgetsWidgetIdRouteWithChildren
+  WidgetsNewRoute: typeof WidgetsNewRoute
   WidgetsIndexRoute: typeof WidgetsIndexRoute
 }
 
@@ -82,12 +117,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WidgetsWidgetIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/widgets/new': {
+      id: '/widgets/new'
+      path: '/widgets/new'
+      fullPath: '/widgets/new'
+      preLoaderRoute: typeof WidgetsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widgets/$widgetId/edit': {
+      id: '/widgets/$widgetId/edit'
+      path: '/edit'
+      fullPath: '/widgets/$widgetId/edit'
+      preLoaderRoute: typeof WidgetsWidgetIdEditRouteImport
+      parentRoute: typeof WidgetsWidgetIdRoute
+    }
   }
 }
 
+interface WidgetsWidgetIdRouteChildren {
+  WidgetsWidgetIdEditRoute: typeof WidgetsWidgetIdEditRoute
+}
+
+const WidgetsWidgetIdRouteChildren: WidgetsWidgetIdRouteChildren = {
+  WidgetsWidgetIdEditRoute: WidgetsWidgetIdEditRoute,
+}
+
+const WidgetsWidgetIdRouteWithChildren = WidgetsWidgetIdRoute._addFileChildren(
+  WidgetsWidgetIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  WidgetsWidgetIdRoute: WidgetsWidgetIdRoute,
+  WidgetsWidgetIdRoute: WidgetsWidgetIdRouteWithChildren,
+  WidgetsNewRoute: WidgetsNewRoute,
   WidgetsIndexRoute: WidgetsIndexRoute,
 }
 export const routeTree = rootRouteImport

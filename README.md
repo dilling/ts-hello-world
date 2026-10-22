@@ -83,8 +83,8 @@ Each area documents itself. Start here:
 | Frontend, RPC      | [src/web/README.md](src/web/README.md)                 |
 | Tests              | [test/README.md](test/README.md)                       |
 
-Comment and PR conventions are in [CLAUDE.md](CLAUDE.md) — short comments, gotchas only,
-prose lives in these READMEs.
+[CLAUDE.md](CLAUDE.md) is the imperative version of the same conventions, plus the rules
+for comments and PR descriptions.
 
 ### The short version
 
@@ -94,8 +94,9 @@ prose lives in these READMEs.
   own route type, so renaming a response field fails `npm run typecheck` in the frontend.
   Two things keep that honest and both break silently —
   [src/server/README.md](src/server/README.md) covers them.
-- **Frontend state** is TanStack Query for server data, `useState` for ephemeral UI, URL
-  search params for filters, and no global store.
+- **Frontend state** has three tiers — Query for server data, the URL for anything
+  shareable, `useState` for the rest — and no store. Reads go through `queries.ts`, writes
+  through `mutations.ts`, and error/loading/404 surfaces are registered once in `main.tsx`.
   See [src/web/README.md](src/web/README.md).
 - **Jobs** are pg-boss in the API's own process; handlers are thin triggers that call a
   service. See [src/server/jobs/README.md](src/server/jobs/README.md).
@@ -119,9 +120,14 @@ One worked example of each, in reading order:
 | Consistent validation errors             | `src/server/lib/validator.ts`                  |
 | Background job                           | `src/server/jobs/refresh-widgets.job.ts`       |
 | Typed RPC client                         | `src/web/lib/api.ts`                           |
-| **Frontend state** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
+| **Frontend reads** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
+| **Frontend writes** (mutations + toasts) | `src/web/lib/mutations.ts`                     |
 | Route with typed search params + loader  | `src/web/routes/widgets.index.tsx`             |
-| Test harness: transactional fixtures     | `test/db/setup.ts`                             |
+| **Form** (TanStack Form + shared zod)    | `src/web/features/widgets/widget-form.tsx`     |
+| Error / loading / 404 surfaces           | `src/web/main.tsx`, `src/web/components/app-*` |
+| Destructive action confirmation          | `src/web/components/confirm-button.tsx`        |
+| Design tokens (shadcn two-layer)         | `src/web/index.css`                            |
+| Test harness: transactional DB fixtures  | `test/db/setup.ts`                             |
 
 ## Schema changes: `db:push`
 
