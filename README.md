@@ -88,9 +88,17 @@ Read these in order — it's about 300 lines and covers every convention in the 
 | Consistent validation errors             | `src/server/lib/validator.ts`                  |
 | Background job                           | `src/server/jobs/refresh-widgets.job.ts`       |
 | Typed RPC client                         | `src/web/lib/api.ts`                           |
-| **Frontend state** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
+| **Frontend reads** (Query, no Redux)     | `src/web/lib/queries.ts`                       |
+| **Frontend writes** (mutations + toasts) | `src/web/lib/mutations.ts`                     |
 | Route with typed search params + loader  | `src/web/routes/widgets.index.tsx`             |
-| Test harness: per-worker DB schemas      | `test/db/setup.ts`                             |
+| **Form** (TanStack Form + shared zod)    | `src/web/features/widgets/widget-form.tsx`     |
+| Error / loading / 404 surfaces           | `src/web/main.tsx`, `src/web/components/app-*` |
+| Destructive action confirmation          | `src/web/components/confirm-button.tsx`        |
+| Design tokens (shadcn two-layer)         | `src/web/index.css`                            |
+| Test harness: transactional DB fixtures  | `test/db/setup.ts`                             |
+
+Agent-facing rules are in `CLAUDE.md` — a shorter, imperative version of the same
+conventions.
 
 ### Server: repository / service split
 
@@ -128,15 +136,59 @@ Hono's client doesn't throw on 4xx, and routes that can fail have a _union_ resp
 
 ### Frontend state
 
-Two tiers, and that's the whole policy:
+Three tiers, and that's the whole policy:
 
-1. **Server-derived data → TanStack Query**, with `queryOptions` factories in
-   `src/web/lib/queries.ts` so a key can never drift from its fetcher.
-2. **Ephemeral UI state → `useState`** in the component that owns it.
+1. **Server data → TanStack Query.** Reads go through `queryOptions` factories in
+   `src/web/lib/queries.ts` so a key can never drift from its fetcher; writes go through
+   a hook in `src/web/lib/mutations.ts`.
+2. **Shareable UI state → the URL**, as typed search params validated by a zod schema
+   (see `widgets.index.tsx`). Filters, tabs, pagination.
+3. **Ephemeral UI state → `useState`** in the component that owns it.
 
-Filters and anything shareable go in the URL as typed search params (see
-`widgets.index.tsx`). There is deliberately **no Redux or Zustand** — in a dashboard,
-nearly all state is a cached copy of server data, which Query already handles.
+There is deliberately **no Redux or Zustand, and no context holding server data** — in a
+dashboard nearly all state is a cached copy of the server's, which Query already handles.
+A second copy is a cache that disagrees with the first.
+
+Every mutation invalidates what it changed and reports both outcomes as a toast. A
+`useMutation` with no `onError` fails silently, which is the most expensive kind of bug to
+chase: the request fails, the UI doesn't move, and nothing points at the network.
+
+### Forms
+
+`src/web/features/widgets/widget-form.tsx` is the template. TanStack Form, with the
+shared zod schema handed straight to `validators.onChange` — Zod 4 implements Standard
+Schema, so there's no adapter package and no second copy of the validation rules.
+
+Validate against `widgetFieldsSchema`, the no-defaults base, rather than
+`createWidgetSchema`: a `.default()` makes a field optional on the schema's _input_ side,
+while a form always holds a concrete value for every control.
+
+The form takes an `onSubmit` prop and the route owns the mutation, which is why the form
+tests need no QueryClient and no router.
+
+### Failure and loading
+
+`main.tsx` registers `defaultErrorComponent`, `defaultPendingComponent` and
+`defaultNotFoundComponent` on the router, so every route — including ones added later —
+gets them for free.
+
+This matters more than it looks. Every route fetches with `useSuspenseQuery`, which
+_throws_ on error by design. With no error component the throw unmounts the page and
+TanStack falls back to its own minimal renderer, so a failed API call reads as "the app
+died" and sends you debugging the wrong layer.
+
+### Components
+
+shadcn/ui on Radix. Behavioural components (dialog, select, dropdown, popover, tooltip)
+come from `npx shadcn@latest add <name>` — hand-rolling them means hand-rolling focus
+traps, scroll locking and `aria` wiring, and getting it wrong invisibly. Zero-behaviour
+primitives like `badge.tsx` and `card.tsx` stay hand-written.
+
+Design tokens in `src/web/index.css` use shadcn's two-layer shape: the raw token in
+`:root` (`--popover`), re-exported as a Tailwind token in `@theme inline`
+(`--color-popover`). Generated components read both forms, so declare new tokens in both
+blocks — a missing one renders a component unstyled with no error. The app is dark-only;
+there is no light palette.
 
 ### Jobs
 
